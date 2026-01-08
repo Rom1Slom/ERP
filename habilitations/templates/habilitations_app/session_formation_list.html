@@ -1,0 +1,114 @@
+{% extends 'habilitations_app/base.html' %}
+
+{% block title %}Sessions de formation{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-calendar-event"></i> Sessions de formation</h1>
+        <a href="{% url 'creer_session_formation' %}" class="btn btn-success btn-lg">
+            <i class="bi bi-plus-circle"></i> Nouvelle session
+        </a>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Habilitation</label>
+                    <select name="habilitation" class="form-select">
+                        <option value="">Toutes les habilitations</option>
+                        {% for hab in habilitations %}
+                        <option value="{{ hab.id }}" {% if request.GET.habilitation == hab.id|stringformat:"s" %}selected{% endif %}>
+                            {{ hab.code }} - {{ hab.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select name="statut" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="planifiee" {% if request.GET.statut == 'planifiee' %}selected{% endif %}>Planifiée</option>
+                        <option value="en_cours" {% if request.GET.statut == 'en_cours' %}selected{% endif %}>En cours</option>
+                        <option value="terminee" {% if request.GET.statut == 'terminee' %}selected{% endif %}>Terminée</option>
+                        <option value="annulee" {% if request.GET.statut == 'annulee' %}selected{% endif %}>Annulée</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                    <a href="{% url 'liste_sessions_formation' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if sessions %}
+    <div class="row">
+        {% for session in sessions %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header {% if session.statut == 'planifiee' %}bg-primary{% elif session.statut == 'en_cours' %}bg-warning{% elif session.statut == 'terminee' %}bg-success{% else %}bg-secondary{% endif %} text-white">
+                    <h5 class="mb-0">{{ session.numero_session }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ session.habilitation.code }}</h6>
+                    <p class="card-text"><small>{{ session.habilitation.nom }}</small></p>
+                    
+                    <hr>
+                    
+                    <p class="mb-1">
+                        <i class="bi bi-calendar"></i> 
+                        <strong>Du</strong> {{ session.date_debut|date:"d/m/Y" }} 
+                        <strong>au</strong> {{ session.date_fin|date:"d/m/Y" }}
+                    </p>
+                    
+                    <p class="mb-1">
+                        <i class="bi bi-geo-alt"></i> {{ session.lieu|default:"Non spécifié" }}
+                    </p>
+                    
+                    <p class="mb-1">
+                        <i class="bi bi-people"></i> 
+                        <strong>Places:</strong> 
+                        {{ session.formations_session.count }}/{{ session.nombre_places }}
+                        {% if session.est_complete %}
+                        <span class="badge bg-danger">Complète</span>
+                        {% else %}
+                        <span class="badge bg-success">{{ session.places_restantes }} disponible(s)</span>
+                        {% endif %}
+                    </p>
+                    
+                    <p class="mb-0">
+                        <strong>Statut:</strong>
+                        {% if session.statut == 'planifiee' %}
+                            <span class="badge bg-primary">Planifiée</span>
+                        {% elif session.statut == 'en_cours' %}
+                            <span class="badge bg-warning text-dark">En cours</span>
+                        {% elif session.statut == 'terminee' %}
+                            <span class="badge bg-success">Terminée</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Annulée</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'detail_session_formation' session.pk %}" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-eye"></i> Voir détails
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Aucune session de formation trouvée.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'habilitations_app/base.html' %}
+{% block title %}Dashboard Formateur{% endblock %}
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">Tableau de bord Formateur</h2>
+            <p class="text-muted">Sessions où vous êtes assigné et formations à valider.</p>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted">Sessions en cours</div>
+                        <div class="h4 mb-0">{{ sessions_en_cours }}</div>
+                    </div>
+                    <i class="bi bi-calendar-event h3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted">Formations à valider</div>
+                        <div class="h4 mb-0">{{ formations_a_valider }}</div>
+                    </div>
+                    <i class="bi bi-check2-square h3 text-success"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Sessions assignées</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Session</th>
+                                    <th>Habilitation</th>
+                                    <th>Dates</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions_assignees %}
+                                <tr>
+                                    <td><a href="{% url 'detail_session_formation' session.pk %}">{{ session.numero_session }}</a></td>
+                                    <td>{{ session.habilitation.code }}</td>
+                                    <td>{{ session.date_debut }} → {{ session.date_fin }}</td>
+                                    <td>{{ session.get_statut_display }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">Aucune session assignée.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

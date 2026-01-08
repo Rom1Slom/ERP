@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Oxalis{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --brand-primary: {{ request.tenant.couleur_primaire|default:'#34495e' }};
+            --brand-secondary: {{ request.tenant.couleur_secondaire|default:'#27ae60' }};
+        }
+        body {
+            background-color: #f8f9fa;
+            padding-top: 60px;
+        }
+        .sidebar {
+            background-color: var(--brand-primary);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .sidebar a:hover {
+            background-color: #34495e;
+        }
+        .navbar {
+            background-color: var(--brand-primary);
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .badge-expiration {
+            background-color: #e74c3c;
+        }
+        .badge-warning {
+            background-color: #f39c12;
+        }
+        .badge-success {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="bi bi-lightning-charge"></i> {{ request.tenant.nom_public|default:"Oxalis" }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Déconnexion</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Connexion</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Contenu principal -->
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <div class="col-md-2">
+                <div class="sidebar mt-4">
+                    <h5 class="mb-4">
+                        <i class="bi bi-layout-sidebar"></i> Navigation
+                    </h5>
+                    
+                    {% if user.profil.est_client %}
+                    <!-- Menu Client -->
+                    <div class="alert alert-info py-2 px-3" style="font-size: 0.85rem;">
+                        <i class="bi bi-building"></i> CLIENT
+                    </div>
+                    <a href="{% url 'dashboard_client' %}"><i class="bi bi-graph-up"></i> Dashboard</a>
+                    
+                    <h6 class="mt-4 mb-2 text-muted">SALARIÉS</h6>
+                    <a href="{% url 'stagiaire_list' %}"><i class="bi bi-people"></i> Consulter salariés</a>
+                    <a href="{% url 'stagiaire_create' %}"><i class="bi bi-person-plus"></i> Ajouter salarié</a>
+                    
+                    <h6 class="mt-4 mb-2 text-muted">SUIVI</h6>
+                    <a href="{% url 'formation_list' %}"><i class="bi bi-book"></i> Formations</a>
+                    <a href="{% url 'titre_list' %}"><i class="bi bi-award"></i> Habilitations</a>
+                    <a href="{% url 'renouvellement_list' %}"><i class="bi bi-arrow-repeat"></i> Renouvellements</a>
+                    
+                    <h6 class="mt-4 mb-2 text-muted">DEMANDES</h6>
+                    <a href="{% url 'soumettre_demande_stagiaire' %}"><i class="bi bi-send"></i> Nouvelle demande</a>
+                    <a href="{% url 'liste_demandes_stagiaires' %}"><i class="bi bi-list-check"></i> Mes demandes</a>
+                    
+                    {% elif user.profil.est_of %}
+                    <!-- Menu Organisme de Formation -->
+                    <div class="alert alert-success py-2 px-3" style="font-size: 0.85rem;">
+                        <i class="bi bi-school"></i>
+                        {% if user.profil.est_formateur %} FORMATEUR {% elif user.profil.est_secretariat %} SECRÉTARIAT {% else %} ORGANISME DE FORMATION {% endif %}
+                    </div>
+                    <a href="{% url 'dashboard_of' %}"><i class="bi bi-graph-up"></i> Dashboard</a>
+                    {% if user.profil.est_formateur %}
+                        <a href="{% url 'dashboard_formateur' %}"><i class="bi bi-easel"></i> Dashboard formateur</a>
+                        <h6 class="mt-4 mb-2 text-muted">SESSIONS</h6>
+                        <a href="{% url 'liste_sessions_formation' %}"><i class="bi bi-calendar-event"></i> Mes sessions</a>
+                        <h6 class="mt-4 mb-2 text-muted">VALIDATION</h6>
+                        <a href="{% url 'formation_list' %}"><i class="bi bi-book-half"></i> Formations</a>
+                    {% else %}
+                        <h6 class="mt-4 mb-2 text-muted">SESSIONS</h6>
+                        <a href="{% url 'liste_sessions_formation' %}"><i class="bi bi-calendar-event"></i> Sessions</a>
+                        <a href="{% url 'creer_session_formation' %}"><i class="bi bi-calendar-plus"></i> Créer session</a>
+
+                        <h6 class="mt-4 mb-2 text-muted">VALIDATION</h6>
+                        <a href="{% url 'formation_list' %}"><i class="bi bi-book-half"></i> Formations à valider</a>
+                        <a href="{% url 'liste_demandes_admin' %}"><i class="bi bi-inbox-fill"></i> Demandes en attente</a>
+
+                        <h6 class="mt-4 mb-2 text-muted">ENTREPRISES</h6>
+                        <a href="{% url 'liste_invitations' %}"><i class="bi bi-envelope"></i> Invitations PME</a>
+                        <a href="{% url 'creer_entreprise_et_invitation' %}"><i class="bi bi-person-plus"></i> Inviter une PME</a>
+
+                        <h6 class="mt-4 mb-2 text-muted">RÉFÉRENCE</h6>
+                        <a href="{% url 'titre_list' %}"><i class="bi bi-award"></i> Habilitations délivrées</a>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <hr>
+                    <a href="/admin/" class="text-warning"><i class="bi bi-gear"></i> Administration</a>
+                </div>
+            </div>
+            <div class="col-md-10">
+                {% block page_content %}{% endblock %}
+            </div>
+            {% else %}
+            <div class="col-12">
+                {% block page_content_guest %}{% endblock %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

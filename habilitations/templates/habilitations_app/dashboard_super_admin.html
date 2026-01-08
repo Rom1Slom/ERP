@@ -1,0 +1,160 @@
+{% extends 'habilitations_app/base.html' %}
+{% block title %}Dashboard Super Admin{% endblock %}
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">Dashboard Super Admin</h2>
+            <p class="text-muted">Vue globale de la plateforme SaaS Oxalis.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Organismes de Formation</div>
+                        <div class="h4 mb-0">{{ total_of }}</div>
+                    </div>
+                    <i class="bi bi-school h3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">PME Clientes</div>
+                        <div class="h4 mb-0">{{ total_pme }}</div>
+                    </div>
+                    <i class="bi bi-building h3 text-success"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Stagiaires</div>
+                        <div class="h4 mb-0">{{ total_stagiaires }}</div>
+                    </div>
+                    <i class="bi bi-people h3 text-info"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Formations</div>
+                        <div class="h4 mb-0">{{ total_formations }}</div>
+                    </div>
+                    <i class="bi bi-book h3 text-warning"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4 g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">OF Actifs (90 derniers jours)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="display-4">{{ of_actifs }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sessions en cours</h5>
+                </div>
+                <div class="card-body">
+                    <div class="display-4">{{ sessions_actives }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Derniers OF créés</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Ville</th>
+                                    <th>Date création</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for of in derniers_of %}
+                                <tr>
+                                    <td><strong>{{ of.nom }}</strong></td>
+                                    <td>{{ of.email }}</td>
+                                    <td>{{ of.ville }}</td>
+                                    <td>{{ of.date_creation|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">Aucun OF.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Demandes de formation récentes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Entreprise</th>
+                                    <th>Habilitation</th>
+                                    <th>Stagiaires</th>
+                                    <th>Statut</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for demande in demandes_recentes %}
+                                <tr>
+                                    <td>{{ demande.entreprise_demandeuse.nom }}</td>
+                                    <td>{{ demande.habilitation.code }}</td>
+                                    <td><span class="badge bg-secondary">{{ demande.nombre_stagiaires }}</span></td>
+                                    <td>{{ demande.get_statut_display }}</td>
+                                    <td>{{ demande.date_demande|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-3">Aucune demande.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

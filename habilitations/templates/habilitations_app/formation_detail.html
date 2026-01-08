@@ -1,0 +1,189 @@
+{% extends 'habilitations_app/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Formation - {{ formation.stagiaire.nom_complet }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-8">
+            <h1><i class="bi bi-book"></i> Formation</h1>
+            <p class="text-muted">{{ formation.stagiaire.nom_complet }} - {{ formation.habilitation.code }}</p>
+        </div>
+        <div class="col-4 text-end">
+            <a href="{% url 'formation_update' formation.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    <!-- Informations principales -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Informations</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Stagiaire:</strong> {{ formation.stagiaire.nom_complet }}</p>
+                    <p><strong>Habilitation:</strong> {{ formation.habilitation.code }} - {{ formation.habilitation.nom }}</p>
+                    <p><strong>Organisme:</strong> {{ formation.organisme_formation }}</p>
+                    <p><strong>Numéro session:</strong> {{ formation.numero_session }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Calendrier</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Début:</strong> {{ formation.date_debut|date:"d/m/Y" }}</p>
+                    <p><strong>Fin prévue:</strong> {{ formation.date_fin_prevue|date:"d/m/Y" }}</p>
+                    <p><strong>Fin réelle:</strong> {{ formation.date_fin_reelle|date:"d/m/Y"|default:"-" }}</p>
+                    <p><strong>Statut:</strong> 
+                        {% if formation.statut == 'en_cours' %}
+                            <span class="badge bg-primary">En cours</span>
+                        {% elif formation.statut == 'completee' %}
+                            <span class="badge bg-success">Complétée</span>
+                        {% else %}
+                            <span class="badge bg-danger">Abandonnée</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglets -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="competences-tab" data-bs-toggle="tab" data-bs-target="#competences" type="button" role="tab">
+                <i class="bi bi-check-circle"></i> Compétences
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="avis-tab" data-bs-toggle="tab" data-bs-target="#avis" type="button" role="tab">
+                <i class="bi bi-pencil-square"></i> Avis
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="titre-tab" data-bs-toggle="tab" data-bs-target="#titre" type="button" role="tab">
+                <i class="bi bi-award"></i> Titre
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Compétences -->
+        <div class="tab-pane fade show active" id="competences" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Validation des compétences</h5>
+                </div>
+                <div class="card-body">
+                    {% if validations %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Compétence</th>
+                                <th>Validé</th>
+                                <th>Validateur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for validation in validations %}
+                            <tr>
+                                <td>
+                                    {% if validation.type_competence == 'savoir' %}
+                                        <span class="badge bg-info">Savoir</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Savoir-faire</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ validation.titre_competence }}</td>
+                                <td>
+                                    {% if validation.valide %}
+                                        <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                                    {% else %}
+                                        <span class="badge bg-secondary"><i class="bi bi-x"></i></span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ validation.validateur.username|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <a href="{% url 'valider_competences' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Valider les compétences
+                    </a>
+                    {% else %}
+                    <p class="text-muted">Aucune compétence enregistrée.</p>
+                    <a href="{% url 'valider_competences' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Valider les compétences
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Avis -->
+        <div class="tab-pane fade" id="avis" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Avis de formation</h5>
+                </div>
+                <div class="card-body">
+                    {% if avis %}
+                    <div class="mb-3">
+                        <p><strong>Avis:</strong> {{ avis.avis_label }}</p>
+                        <p><strong>Formateur:</strong> {{ avis.formateur_nom }}</p>
+                        <p><strong>Observations:</strong> {{ avis.observations }}</p>
+                    </div>
+                    <a href="{% url 'creer_avis' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Modifier l'avis
+                    </a>
+                    {% else %}
+                    <p class="text-muted">Aucun avis enregistré.</p>
+                    <a href="{% url 'creer_avis' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Créer un avis
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Titre -->
+        <div class="tab-pane fade" id="titre" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Titre d'habilitation</h5>
+                </div>
+                <div class="card-body">
+                    {% if titre %}
+                    <div class="mb-3">
+                        <p><strong>Numéro:</strong> {{ titre.numero_titre }}</p>
+                        <p><strong>Délivrance:</strong> {{ titre.date_delivrance|date:"d/m/Y" }}</p>
+                        <p><strong>Expiration:</strong> {{ titre.date_expiration|date:"d/m/Y" }}</p>
+                        <p><strong>Statut:</strong> {{ titre.statut }}</p>
+                    </div>
+                    <a href="{% url 'delivrer_titre' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Modifier le titre
+                    </a>
+                    {% else %}
+                    <p class="text-muted">Aucun titre délivré.</p>
+                    {% if formation.statut == 'completee' %}
+                    <a href="{% url 'delivrer_titre' formation.id %}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Délivrer un titre
+                    </a>
+                    {% else %}
+                    <p class="text-muted"><small>La formation doit être complétée pour délivrer un titre.</small></p>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

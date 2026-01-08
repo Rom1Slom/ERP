@@ -1,0 +1,54 @@
+{% extends 'habilitations_app/base.html' %}
+
+{% block title %}Valider les compétences - {{ formation.stagiaire.nom_complet }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <h1><i class="bi bi-check-circle"></i> Validation des compétences</h1>
+    <p class="text-muted">{{ formation.stagiaire.nom_complet }} - {{ formation.habilitation.code }}</p>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% regroup validations by get_type_competence_display as types %}
+                
+                {% for type_group in types %}
+                <fieldset class="mb-4">
+                    <legend class="fs-5 mb-3">
+                        {% if type_group.grouper == 'Savoir théorique' %}
+                            <i class="bi bi-lightbulb"></i> Savoirs Théoriques
+                        {% else %}
+                            <i class="bi bi-tools"></i> Savoirs-Faire Pratiques
+                        {% endif %}
+                    </legend>
+                    <div class="row">
+                        {% for validation in type_group.list %}
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check p-3 border rounded">
+                                <input class="form-check-input" type="checkbox" id="comp_{{ validation.id }}" 
+                                       name="validations_check" value="{{ validation.id }}" 
+                                       {% if validation.valide %}checked{% endif %}>
+                                <label class="form-check-label" for="comp_{{ validation.id }}">
+                                    {{ validation.titre_competence }}
+                                </label>
+                                {% if validation.description %}
+                                <small class="d-block text-muted mt-2">{{ validation.description }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endfor %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check"></i> Valider</button>
+                    <a href="{% url 'formation_detail' formation.id %}" class="btn btn-secondary">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends 'habilitations_app/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Session {{ session.numero_session }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="bi bi-calendar-event"></i> Session {{ session.numero_session }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Habilitation:</strong> <span class="badge bg-info">{{ session.habilitation.code }}</span></p>
+                            <p><strong>Nom:</strong> {{ session.habilitation.nom }}</p>
+                            <p><strong>Du:</strong> {{ session.date_debut|date:"d/m/Y" }}</p>
+                            <p><strong>Au:</strong> {{ session.date_fin|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Lieu:</strong> {{ session.lieu|default:"Non spécifié" }}</p>
+                            <p><strong>Formateur:</strong> {{ session.formateur_nom|default:"Non assigné" }}</p>
+                            <p><strong>Organisme:</strong> {{ session.organisme_formation }}</p>
+                            <p>
+                                <strong>Statut:</strong>
+                                {% if session.statut == 'planifiee' %}
+                                    <span class="badge bg-primary">Planifiée</span>
+                                {% elif session.statut == 'en_cours' %}
+                                    <span class="badge bg-warning text-dark">En cours</span>
+                                {% elif session.statut == 'terminee' %}
+                                    <span class="badge bg-success">Terminée</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Annulée</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-people"></i> 
+                        <strong>Places:</strong> {{ session.formations_session.count }}/{{ session.nombre_places }}
+                        {% if session.est_complete %}
+                        <span class="badge bg-danger ms-2">Session complète</span>
+                        {% else %}
+                        <span class="badge bg-success ms-2">{{ session.places_restantes }} place(s) disponible(s)</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if session.notes %}
+                    <div class="mt-3">
+                        <h5>Notes</h5>
+                        <p>{{ session.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Liste des stagiaires inscrits -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-people-fill"></i> Stagiaires inscrits ({{ formations_session.count }})</h4>
+                </div>
+                <div class="card-body">
+                    {% if formations_session %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Entreprise</th>
+                                    <th>Email</th>
+                                    <th>Statut formation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for formation in formations_session %}
+                                <tr>
+                                    <td>{{ formation.stagiaire.nom_complet }}</td>
+                                    <td>{{ formation.stagiaire.entreprise.nom }}</td>
+                                    <td><small>{{ formation.stagiaire.email }}</small></td>
+                                    <td>
+                                        {% if formation.statut == 'en_cours' %}
+                                            <span class="badge bg-warning text-dark">En cours</span>
+                                        {% elif formation.statut == 'completee' %}
+                                            <span class="badge bg-success">Complétée</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ formation.get_statut_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Aucun stagiaire inscrit pour le moment.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne de droite: Demandes disponibles -->
+        <div class="col-md-4">
+            <div class="card shadow sticky-top" style="top: 20px;">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-inbox"></i> Demandes en attente ({{ demandes_disponibles.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if demandes_disponibles and not session.est_complete %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="assigner_demandes" value="1">
+                        
+                        <div class="mb-3">
+                            {% for demande in demandes_disponibles %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="demandes" value="{{ demande.id }}" id="demande{{ demande.id }}">
+                                <label class="form-check-label" for="demande{{ demande.id }}">
+                                    <strong>{{ demande.nom_complet }}</strong><br>
+                                    <small class="text-muted">{{ demande.entreprise.nom }}</small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-check-circle"></i> Intégrer à la session
+                        </button>
+                    </form>
+                    {% elif session.est_complete %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Session complète
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Aucune demande en attente pour cette habilitation.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'liste_sessions_formation' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Retour aux sessions
+        </a>
+    </div>
+</div>
+{% endblock %}

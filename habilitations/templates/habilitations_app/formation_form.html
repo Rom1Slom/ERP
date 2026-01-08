@@ -1,0 +1,20 @@
+{% extends 'habilitations_app/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.id %}Modifier{% else %}Créer{% endif %} une formation{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1><i class="bi bi-book-plus"></i> {% if form.instance.id %}Modifier{% else %}Créer{% endif %} une formation</h1>
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            {% crispy form %}
+        </div>
+    </div>
+</div>
+{% endblock %}

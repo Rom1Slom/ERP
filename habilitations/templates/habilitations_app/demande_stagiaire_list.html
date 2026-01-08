@@ -1,0 +1,73 @@
+{% extends 'habilitations_app/base.html' %}
+
+{% block title %}Mes demandes de formation{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-list-check"></i> Mes demandes de formation</h1>
+        <a href="{% url 'soumettre_demande_stagiaire' %}" class="btn btn-success btn-lg">
+            <i class="bi bi-plus-circle"></i> Nouvelle demande
+        </a>
+    </div>
+
+    {% if demandes %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date demande</th>
+                    <th>Stagiaire</th>
+                    <th>Habilitation</th>
+                    <th>Statut</th>
+                    <th>Session assignée</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for demande in demandes %}
+                <tr>
+                    <td>{{ demande.date_demande|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <strong>{{ demande.nom_complet }}</strong><br>
+                        <small class="text-muted">{{ demande.email }}</small>
+                    </td>
+                    <td><span class="badge bg-info">{{ demande.habilitation_demandee.code }}</span></td>
+                    <td>
+                        {% if demande.statut == 'en_attente' %}
+                            <span class="badge bg-warning text-dark">En attente</span>
+                        {% elif demande.statut == 'validee' %}
+                            <span class="badge bg-primary">Validée</span>
+                        {% elif demande.statut == 'integree' %}
+                            <span class="badge bg-success">Intégrée à une session</span>
+                        {% elif demande.statut == 'refusee' %}
+                            <span class="badge bg-danger">Refusée</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if demande.session_assignee %}
+                            <span class="badge bg-secondary">{{ demande.session_assignee.numero_session }}</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if demande.notes %}
+                            <small>{{ demande.notes|truncatewords:10 }}</small>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Vous n'avez pas encore soumis de demande de formation.
+        <a href="{% url 'soumettre_demande_stagiaire' %}" class="alert-link">Créer une première demande</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

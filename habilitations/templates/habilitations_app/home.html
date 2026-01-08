@@ -1,0 +1,53 @@
+{% extends 'habilitations_app/base.html' %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block page_content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="jumbotron bg-light p-5 rounded-lg mb-4">
+                <h1 class="display-4"><i class="bi bi-lightning-charge"></i> Gestion des Habilitations Électriques</h1>
+                <p class="lead">Système de gestion complet pour les qualifications et certifications électriques en entreprise</p>
+                {% if user.is_authenticated %}
+                <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}" role="button">Accéder au Dashboard</a>
+                {% else %}
+                <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Se connecter</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if not user.is_authenticated %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-people" style="font-size: 3rem; color: #34495e;"></i>
+                    <h5 class="card-title mt-3">Gestion des Stagiaires</h5>
+                    <p class="card-text">Gérez les informations et historiques de vos stagiaires</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-book" style="font-size: 3rem; color: #34495e;"></i>
+                    <h5 class="card-title mt-3">Suivi des Formations</h5>
+                    <p class="card-text">Tracez les formations et validez les compétences</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-award" style="font-size: 3rem; color: #34495e;"></i>
+                    <h5 class="card-title mt-3">Délivrance de Titres</h5>
+                    <p class="card-text">Générez et gérez les titres d'habilitation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'habilitations_app/base.html' %}
+{% load static %}
+
+{% block title %}Mes demandes de formation{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">
+                            <i class="bi bi-list-check"></i> 
+                            {% if est_admin_of %}
+                                Demandes de formation reçues
+                            {% else %}
+                                Mes demandes de formation
+                            {% endif %}
+                        </h4>
+                    </div>
+                    {% if est_responsable_pme %}
+                        <a href="{% url 'creer_demande_formation' %}" class="btn btn-light">
+                            <i class="bi bi-plus-circle"></i> Nouvelle demande
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Filtres -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="statut" class="form-label">Statut</label>
+                            <select name="statut" id="statut" class="form-select">
+                                <option value="">Tous</option>
+                                <option value="en_attente">En attente</option>
+                                <option value="approuvee">Approuvée</option>
+                                <option value="refusee">Refusée</option>
+                                <option value="annulee">Annulée</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="habilitation" class="form-label">Habilitation</label>
+                            <select name="habilitation" id="habilitation" class="form-select">
+                                <option value="">Toutes</option>
+                                {% for hab in habilitations %}
+                                    <option value="{{ hab.id }}">{{ hab.code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Filtrer
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Liste des demandes -->
+                    {% if demandes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        {% if est_admin_of %}
+                                            <th>Entreprise</th>
+                                        {% endif %}
+                                        <th>Habilitation</th>
+                                        <th>Nb stagiaires</th>
+                                        <th>Date souhaitée</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for demande in demandes %}
+                                        <tr>
+                                            <td>{{ demande.date_demande|date:"d/m/Y H:i" }}</td>
+                                            {% if est_admin_of %}
+                                                <td>
+                                                    <strong>{{ demande.entreprise_demandeuse.nom }}</strong>
+                                                </td>
+                                            {% endif %}
+                                            <td>
+                                                <span class="badge bg-info">{{ demande.habilitation.code }}</span>
+                                            </td>
+                                            <td>{{ demande.nombre_stagiaires }}</td>
+                                            <td>
+                                                {% if demande.date_souhaitee %}
+                                                    {{ demande.date_souhaitee|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">Non précisée</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if demande.statut == 'en_attente' %}
+                                                    <span class="badge bg-warning text-dark">En attente</span>
+                                                {% elif demande.statut == 'approuvee' %}
+                                                    <span class="badge bg-success">Approuvée</span>
+                                                {% elif demande.statut == 'refusee' %}
+                                                    <span class="badge bg-danger">Refusée</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ demande.get_statut_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'detail_demande_formation' demande.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Voir
+                                                </a>
+                                                {% if est_admin_of and demande.statut == 'en_attente' %}
+                                                    <a href="{% url 'traiter_demande_formation' demande.pk %}" 
+                                                       class="btn btn-sm btn-success">
+                                                        <i class="bi bi-check-circle"></i> Traiter
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            {% if est_admin_of %}
+                                Aucune demande de formation reçue pour le moment.
+                            {% else %}
+                                Aucune demande de formation pour le moment.
+                                <a href="{% url 'creer_demande_formation' %}" class="alert-link">Créer une demande</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

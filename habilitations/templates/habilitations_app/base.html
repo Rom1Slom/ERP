@@ -55,7 +55,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="bi bi-lightning-charge"></i> {{ request.tenant.nom_public|default:"Oxalis" }}
+                <i class="bi bi-lightning-charge"></i> Habilitations Électriques
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -148,9 +148,16 @@
                         <a href="{% url 'formation_list' %}"><i class="bi bi-book-half"></i> Formations à valider</a>
                         <a href="{% url 'liste_demandes_admin' %}"><i class="bi bi-inbox-fill"></i> Demandes en attente</a>
 
+                        <h6 class="mt-4 mb-2 text-muted">CATALOGUE</h6>
+                        <a href="#catalogueFormationsModal" data-bs-toggle="modal"><i class="bi bi-pencil-square"></i> Ajouter/modifier une formation</a>
+
+                        <h6 class="mt-4 mb-2 text-muted">FORMATEUR</h6>
+                        <a href="{% url 'formateurs_list' %}"><i class="bi bi-person-check"></i> Ajouter/modifier</a>
+
                         <h6 class="mt-4 mb-2 text-muted">ENTREPRISES</h6>
-                        <a href="{% url 'liste_invitations' %}"><i class="bi bi-envelope"></i> Invitations PME</a>
-                        <a href="{% url 'creer_entreprise_et_invitation' %}"><i class="bi bi-person-plus"></i> Inviter une PME</a>
+                        <a href="{% url 'creer_client' %}"><i class="bi bi-building-add"></i> Créer un Client</a>
+                        <a href="{% url 'inviter_client_nouveau' %}"><i class="bi bi-envelope-plus"></i> Inviter un Client</a>
+                        <a href="{% url 'liste_invitations' %}"><i class="bi bi-envelope"></i> Mes Clients</a>
 
                         <h6 class="mt-4 mb-2 text-muted">RÉFÉRENCE</h6>
                         <a href="{% url 'titre_list' %}"><i class="bi bi-award"></i> Habilitations délivrées</a>
@@ -164,7 +171,13 @@
             <div class="col-md-10">
                 {% block page_content %}{% endblock %}
             </div>
-            {% else %}
+        </div>
+    </div>
+
+    <!-- Modal Catalogue des Formations -->
+    {% include "habilitations_app/catalogue_formations_modal.html" %}
+
+    {% else %}
             <div class="col-12">
                 {% block page_content_guest %}{% endblock %}
             </div>

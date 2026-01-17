@@ -11,6 +11,7 @@ from datetime import timedelta
 from django.utils import timezone
 import csv
 import io
+from .services import formateurs_of
 from .models import (
     Entreprise, Stagiaire, Formation, ValidationCompetence, 
     Titre, AvisFormation, RenouvellementHabilitation, Habilitation,
@@ -58,6 +59,10 @@ def home(request):
     try:
         profil = request.user.profil
         
+        # Superuser fallback to avoid redirect loops when profil is absent or mal configuré
+        if request.user.is_superuser:
+            return redirect('dashboard_super_admin')
+
         if profil.est_super_admin:
             return redirect('dashboard_super_admin')
         elif profil.est_admin_of:
@@ -72,7 +77,9 @@ def home(request):
             return redirect('dashboard_stagiaire')
         
     except (AttributeError, ProfilUtilisateur.DoesNotExist):
-        messages.warning(request, "Profil utilisateur non configuré.")
+        # Créer un profil par défaut si l'utilisateur n'en a pas
+        profil = ProfilUtilisateur.objects.create(user=request.user)
+        messages.info(request, "Un profil utilisateur a été créé. Veuillez configurer votre rôle et entreprise dans l'administration.")
     
     return render(request, 'habilitations_app/home.html')
 
@@ -690,7 +697,7 @@ def creer_session_formation(request):
         return redirect('home')
 
     if request.method == 'POST':
-        form = SessionFormationForm(request.POST)
+        form = SessionFormationForm(request.POST, user=request.user)
         if form.is_valid():
             session = form.save(commit=False)
             session.createur = request.user
@@ -699,10 +706,11 @@ def creer_session_formation(request):
             messages.success(request, f"Session {session.numero_session} créée avec succès.")
             return redirect('detail_session_formation', pk=session.pk)
     else:
-        form = SessionFormationForm()
+        form = SessionFormationForm(user=request.user)
     
     context = {
         'form': form,
+        'organisme_formation': profil.entreprise,
     }
     return render(request, 'habilitations_app/session_formation_form.html', context)
 
@@ -736,6 +744,40 @@ def liste_sessions_formation(request):
 
 
 @login_required
+def modifier_session_formation(request, pk):
+    """Modifier une session de formation existante"""
+    profil = request.user.profil
+    if not (profil.est_admin_of or profil.est_secretariat):
+        messages.error(request, "Accès réservé au personnel OF.")
+        return redirect('home')
+    
+    session = get_object_or_404(SessionFormation, pk=pk)
+    
+    # Vérifier que l'utilisateur a accès à cette session
+    if getattr(profil, 'tenant', None) and session.tenant and session.tenant != profil.tenant:
+        messages.error(request, "Vous ne pouvez pas modifier cette session.")
+        return redirect('detail_session_formation', pk=session.pk)
+
+    if request.method == 'POST':
+        form = SessionFormationForm(request.POST, instance=session, user=request.user)
+        if form.is_valid():
+            session = form.save()
+            messages.success(request, f"Session {session.numero_session} modifiée avec succès.")
+            return redirect('detail_session_formation', pk=session.pk)
+    else:
+        form = SessionFormationForm(instance=session, user=request.user)
+    
+    context = {
+        'form': form,
+        'organisme_formation': profil.entreprise,
+        'session': session,
+    }
+    return render(request, 'habilitations_app/session_formation_form.html', context)
+
+
+
+
+@login_required
 def detail_session_formation(request, pk):
     """Détail d'une session de formation avec possibilité d'assigner des demandes"""
     profil = request.user.profil
@@ -759,7 +801,7 @@ def detail_session_formation(request, pk):
         demandes_disponibles = demandes_disponibles.filter(tenant=session.tenant)
     
     # Demandes déjà assignées à cette session
-    demandes_assignees = session.demandes.all()
+    demandes_assignees = session.demandes_independants.all()
     
     # Formations créées pour cette session
     formations_session = session.formations_session.all()

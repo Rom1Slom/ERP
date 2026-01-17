@@ -1,5 +1,5 @@
 """
-Vues pour la gestion des invitations PME par les OF
+Vues pour la gestion des invitations Clients par les OF
 """
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -14,46 +14,106 @@ from .forms import EntrepriseForm, InvitationEntrepriseForm
 
 @login_required
 @admin_of_required
-def creer_entreprise_et_invitation(request):
-    """Créer une PME et envoyer une invitation (Admin OF)"""
+def creer_client(request):
+    """Créer un Client (Admin OF) - sans invitation"""
     profil = request.user.profil
     organisme_formation = profil.entreprise
     
     if request.method == 'POST':
         entreprise_form = EntrepriseForm(request.POST)
+        
+        if entreprise_form.is_valid():
+            # Créer le client
+            client = entreprise_form.save(commit=False)
+            client.type_entreprise = 'client'
+            client.save()
+            
+            messages.success(request, f"Client '{client.nom}' créé avec succès.")
+            return redirect('liste_invitations')
+    else:
+        entreprise_form = EntrepriseForm()
+    
+    return render(request, 'habilitations_app/client_create.html', {
+        'form': entreprise_form,
+        'organisme_formation': organisme_formation,
+    })
+
+
+@login_required
+@admin_of_required
+def inviter_client(request, client_id=None):
+    """Inviter un Client existant (Admin OF)"""
+    profil = request.user.profil
+    organisme_formation = profil.entreprise
+    
+    # Si client_id est fourni, c'est une invitation pour un client existant
+    client = None
+    if client_id:
+        client = get_object_or_404(Entreprise, id=client_id, type_entreprise='client')
+    
+    if request.method == 'POST':
+        # Créer l'invitation
         invitation_form = InvitationEntrepriseForm(request.POST)
         
-        if entreprise_form.is_valid() and invitation_form.is_valid():
-            # Créer la PME
-            pme: Entreprise = entreprise_form.save(commit=False)
-            pme.type_entreprise = 'client'
-            pme.save()
+        if invitation_form.is_valid():
+            # Déterminer le client
+            if client:
+                # Invitation pour un client existant
+                client_obj = client
+            else:
+                # Créer un nouveau client ET inviter
+                entreprise_form = EntrepriseForm(request.POST)
+                if not entreprise_form.is_valid():
+                    messages.error(request, "Erreur lors de la création du client.")
+                    return render(request, 'habilitations_app/client_invite.html', {
+                        'form': invitation_form,
+                        'entreprise_form': entreprise_form,
+                        'organisme_formation': organisme_formation,
+                        'client': client,
+                    })
+                
+                client_obj = entreprise_form.save(commit=False)
+                client_obj.type_entreprise = 'client'
+                client_obj.save()
             
             # Créer l'invitation
-            invitation: InvitationEntreprise = invitation_form.save(commit=False)
+            invitation = invitation_form.save(commit=False)
             invitation.organisme_formation = organisme_formation
-            invitation.entreprise_client = pme
+            invitation.entreprise_client = client_obj
             invitation.created_by = request.user
             invitation.save()
             
             # Lien d'invitation
             lien = request.build_absolute_uri(f"/invite/{invitation.token}/")
-            messages.success(request, f"PME créée et invitation envoyée. Lien: {lien}")
+            messages.success(request, f"Invitation envoyée pour '{client_obj.nom}'. Lien: {lien}")
             
             return render(request, 'habilitations_app/invitation_success.html', {
-                'entreprise': pme,
+                'entreprise': client_obj,
                 'invitation': invitation,
                 'lien': lien,
             })
     else:
-        entreprise_form = EntrepriseForm()
         invitation_form = InvitationEntrepriseForm()
     
-    return render(request, 'habilitations_app/invitation_create.html', {
-        'entreprise_form': entreprise_form,
-        'invitation_form': invitation_form,
+    context = {
+        'form': invitation_form,
         'organisme_formation': organisme_formation,
-    })
+        'client': client,
+    }
+    
+    if not client:
+        # Si pas de client fourni, on ajoute aussi le formulaire pour créer un client
+        context['entreprise_form'] = EntrepriseForm()
+    
+    return render(request, 'habilitations_app/client_invite.html', context)
+
+
+@login_required
+@admin_of_required
+def creer_entreprise_et_invitation(request):
+    """Créer un Client ET envoyer une invitation (Admin OF) - Legacy"""
+    # Cette fonction est gardée pour la compatibilité, elle redirige vers inviter_client
+    return inviter_client(request)
 
 
 @login_required

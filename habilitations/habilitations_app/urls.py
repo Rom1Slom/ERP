@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from . import views_demandes, views_dashboards, views_invitations
+from . import views_demandes, views_dashboards, views_invitations, views_formateurs, views_catalogue, views_api
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -9,7 +9,7 @@ urlpatterns = [
     path('dashboard/', views.home, name='dashboard'),  # Redirection intelligente
     path('dashboard/super-admin/', views_dashboards.dashboard_super_admin, name='dashboard_super_admin'),
     path('dashboard/admin-of/', views_dashboards.dashboard_admin_of, name='dashboard_admin_of'),
-    path('dashboard/responsable-pme/', views_dashboards.dashboard_responsable_pme, name='dashboard_responsable_pme'),
+    path('dashboard/client/', views_dashboards.dashboard_responsable_pme, name='dashboard_responsable_pme'),
     path('dashboard/stagiaire/', views_dashboards.dashboard_stagiaire, name='dashboard_stagiaire'),
     path('dashboard/formateur/', views_dashboards.dashboard_formateur, name='dashboard_formateur'),
     
@@ -54,12 +54,30 @@ urlpatterns = [
     path('sessions/', views.liste_sessions_formation, name='liste_sessions_formation'),
     path('sessions/creer/', views.creer_session_formation, name='creer_session_formation'),
     path('sessions/<int:pk>/', views.detail_session_formation, name='detail_session_formation'),
+    path('sessions/<int:pk>/modifier/', views.modifier_session_formation, name='modifier_session_formation'),
     
     # Gestion des demandes (admin/secrétaire)
     path('admin/demandes/', views.liste_demandes_admin, name='liste_demandes_admin'),
 
-    # Invitations PME (Admin OF)
-    path('of/invitations/', views_invitations.liste_invitations, name='liste_invitations'),
+    # Formateurs (admin_of, secretariat)
+    path('dashboard/admin-of/formateurs/', views_formateurs.formateurs_list, name='formateurs_list'),
+    path('dashboard/admin-of/formateurs/new/', views_formateurs.formateur_edit, name='formateur_create'),
+    path('dashboard/admin-of/formateurs/<int:pk>/edit/', views_formateurs.formateur_edit, name='formateur_edit'),
+    path('dashboard/admin-of/formateurs/<int:pk>/toggle/', views_formateurs.formateur_toggle, name='formateur_toggle'),
+
+    # Catalogue des formations (admin_of, secretariat)
+    path('api/catalogue-formations/', views_catalogue.catalogue_formations_list, name='catalogue_formations_list'),
+    path('api/catalogue-formations/add/', views_catalogue.catalogue_formations_add, name='catalogue_formations_add'),
+    path('api/catalogue-formations/<int:pk>/delete/', views_catalogue.catalogue_formations_delete, name='catalogue_formations_delete'),
+    path('api/catalogue-formations/<int:pk>/toggle/', views_catalogue.catalogue_formations_toggle, name='catalogue_formations_toggle'),
+
+    # Clients (Admin OF)
+    path('of/clients/', views_invitations.liste_invitations, name='liste_invitations'),
+    path('of/clients/creer/', views_invitations.creer_client, name='creer_client'),
+    path('of/clients/<int:client_id>/inviter/', views_invitations.inviter_client, name='inviter_client'),
+    path('of/clients/inviter/', views_invitations.inviter_client, name='inviter_client_nouveau'),
+    
+    # Legacy - pour compatibilité
     path('of/invitations/creer/', views_invitations.creer_entreprise_et_invitation, name='creer_entreprise_et_invitation'),
     path('invite/<str:token>/', views_invitations.accepter_invitation, name='accepter_invitation'),
 
@@ -68,4 +86,6 @@ urlpatterns = [
     path('api/aggregats-of/', views.api_aggregats_of, name='api_aggregats_of'),
     path('api/demandes/<int:demande_id>/valider/', views.api_valider_demande, name='api_valider_demande'),
     path('api/titres/<int:titre_id>/pdf/', views.api_pdf_titre, name='api_pdf_titre'),
+    path('api/type-formations/', views_api.api_type_formations, name='api_type_formations'),
+    path('api/type-formations/<int:type_id>/specialisations/', views_api.api_type_formation_specialisations, name='api_type_formation_specialisations'),
 ]

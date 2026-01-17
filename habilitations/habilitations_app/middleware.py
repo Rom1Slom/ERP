@@ -151,7 +151,7 @@ def get_accessible_entreprises(user):
     
     tenant = getattr(profil, 'tenant', None)
 
-    # Admin OF / Secrétariat : son OF + PME clientes rattachées au tenant
+    # Admin OF / Secrétariat : son OF + Clients rattachés au tenant
     if profil.est_admin_of or profil.est_secretariat:
         from django.db.models import Q
         qs = Entreprise.objects.filter(

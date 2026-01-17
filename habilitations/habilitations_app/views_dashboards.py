@@ -70,6 +70,11 @@ def dashboard_admin_of(request):
     profil = request.user.profil
     organisme_formation = profil.entreprise
     
+    # Protection: rediriger si pas d'entreprise configurée
+    if not organisme_formation:
+        messages.error(request, "Votre profil n'est pas associé à un organisme de formation. Contactez l'administrateur.")
+        return redirect('home')
+    
     # Stagiaires gérés par cet OF
     total_stagiaires = Stagiaire.objects.filter(organisme_formation=organisme_formation).count()
     stagiaires_independants = Stagiaire.objects.filter(
@@ -77,7 +82,7 @@ def dashboard_admin_of(request):
         entreprise__isnull=True
     ).count()
     
-    # PME clientes
+    # Clients
     pme_clientes = Entreprise.objects.filter(
         type_entreprise='client',
         stagiaires__organisme_formation=organisme_formation
@@ -85,15 +90,20 @@ def dashboard_admin_of(request):
     total_pme = pme_clientes.count()
     
     # Sessions
-    sessions_en_cours = SessionFormation.objects.filter(
-        organisme_formation=organisme_formation.nom,
-        statut='en_cours',
-        date_fin__gte=timezone.now().date()
-    ).count()
-    
-    sessions_recentes = SessionFormation.objects.filter(
-        organisme_formation=organisme_formation.nom
-    ).order_by('-date_debut')[:5]
+    tenant_of = getattr(organisme_formation, 'tenant_of', None)
+    if tenant_of:
+        sessions_en_cours = SessionFormation.objects.filter(
+            tenant=tenant_of,
+            statut='en_cours',
+            date_fin__gte=timezone.now().date()
+        ).count()
+        
+        sessions_recentes = SessionFormation.objects.filter(
+            tenant=tenant_of
+        ).order_by('-date_debut')[:5]
+    else:
+        sessions_en_cours = 0
+        sessions_recentes = []
     
     # Demandes de formation reçues
     demandes_en_attente = DemandeFormation.objects.filter(

@@ -40,6 +40,8 @@ def creer_demande_formation(request):
         habilitation_id = request.POST.get('habilitation')
         stagiaires_ids = request.POST.getlist('stagiaires')
         date_souhaitee = request.POST.get('date_souhaitee')
+        type_formation = request.POST.get('type_formation', 'intra')
+        lieu_formation = request.POST.get('lieu_formation', 'sur_site')
         commentaire = request.POST.get('commentaire')
         
         if not habilitation_id or not stagiaires_ids:
@@ -51,6 +53,8 @@ def creer_demande_formation(request):
                 organisme_formation=organisme_formation,
                 tenant=tenant,
                 habilitation_id=habilitation_id,
+                type_formation=type_formation,
+                lieu_formation=lieu_formation,
                 date_souhaitee=date_souhaitee if date_souhaitee else None,
                 commentaire_demande=commentaire,
                 demandeur=request.user,
@@ -76,6 +80,8 @@ def creer_demande_formation(request):
         'stagiaires': stagiaires,
         'habilitations': habilitations,
         'organisme_formation': organisme_formation,
+        'type_formation_choices': DemandeFormation.TYPE_FORMATION_CHOICES,
+        'lieu_formation_choices': DemandeFormation.LIEU_FORMATION_CHOICES,
     }
     return render(request, 'habilitations_app/demande_formation_form.html', context)
 

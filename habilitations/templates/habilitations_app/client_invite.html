@@ -1,0 +1,50 @@
+{% extends "habilitations_app/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if client %}Inviter {{ client.nom }}{% else %}Créer et inviter un Client{% endif %}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card p-4">
+        {% if client %}
+        <h3 class="mb-3"><i class="bi bi-envelope-plus"></i> Inviter {{ client.nom }}</h3>
+        {% else %}
+        <h3 class="mb-3"><i class="bi bi-building-add"></i> Créer et inviter un Client</h3>
+        {% endif %}
+        <p class="text-muted">Organisme de formation: <strong>{{ organisme_formation.nom }}</strong></p>
+        
+        <form method="post" class="mt-3">
+          {% csrf_token %}
+          
+          {% if not client and entreprise_form %}
+          <h5 class="mt-4 mb-3">Informations du Client</h5>
+          {% crispy entreprise_form %}
+          {% endif %}
+          
+          <h5 class="mt-4 mb-3">Invitation du responsable Client</h5>
+          {% crispy form %}
+          
+          <button type="submit" class="btn btn-primary mt-3">
+            <i class="bi bi-send"></i> Créer et envoyer l'invitation
+          </button>
+          <a href="{% url 'liste_invitations' %}" class="btn btn-secondary mt-3">
+            <i class="bi bi-x-circle"></i> Annuler
+          </a>
+        </form>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4 bg-light">
+        <h5 class="mb-3">Conseils</h5>
+        <ul>
+          <li>Renseignez l'email du responsable Client.</li>
+          <li>Le lien d'invitation expirera automatiquement après 7 jours.</li>
+          <li>Le Client pourra créer son compte en cliquant sur le lien.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

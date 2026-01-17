@@ -1,0 +1,88 @@
+{% extends "habilitations_app/base.html" %}
+{% load static %}
+
+{% block title %}Formateurs - {{ of.nom }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Formateurs de {{ of.nom }}</h2>
+        <a href="{% url 'formateur_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Ajouter un formateur
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if formateurs %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Statut</th>
+                        <th>Spécialisations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for formateur in formateurs %}
+                        <tr>
+                            <td><strong>{{ formateur.user.get_full_name }}</strong></td>
+                            <td>{{ formateur.user.email }}</td>
+                            <td>
+                                {% if formateur.actif %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with comps=formateur.competences.filter|slice:":10" %}
+                                    {% if comps %}
+                                        <small>
+                                            {% for comp in comps %}
+                                                {% if comp.actif %}
+                                                    <span class="badge bg-info">{{ comp.specialisation.code }}</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </small>
+                                    {% else %}
+                                        <small class="text-muted">Aucune</small>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <a href="{% url 'formateur_edit' formateur.id %}" class="btn btn-sm btn-outline-primary">
+                                    Modifier
+                                </a>
+                                <form method="post" action="{% url 'formateur_toggle' formateur.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-warning" type="submit">
+                                        {% if formateur.actif %}Désactiver{% else %}Activer{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Aucun formateur pour le moment.
+            <a href="{% url 'formateur_create' %}">Ajouter le premier</a>
+        </div>
+    {% endif %}
+
+    <a href="{% url 'dashboard_admin_of' %}" class="btn btn-secondary mt-3">Retour au tableau de bord</a>
+</div>
+{% endblock %}

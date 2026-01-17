@@ -6,7 +6,8 @@ from .models import (
     ValidationCompetence, Titre, AvisFormation, 
     RenouvellementHabilitation, Journal,
     DemandeStagiaire, SessionFormation, ProfilUtilisateur,
-    DemandeFormation
+    DemandeFormation,
+    TypeFormation, Specialisation, TenantFormation, Tenant
 )
 
 
@@ -142,17 +143,16 @@ class SessionFormationAdmin(admin.ModelAdmin):
 
 @admin.register(DemandeStagiaire)
 class DemandeStagiaireAdmin(admin.ModelAdmin):
-    list_display = ['nom_complet', 'entreprise', 'statut', 'est_renouvellement', 'date_demande']
-    list_filter = ['statut', 'est_renouvellement', 'entreprise', 'date_demande']
-    search_fields = ['nom', 'prenom', 'email', 'entreprise__nom']
+    list_display = ['nom_complet', 'statut_professionnel', 'statut', 'est_renouvellement', 'date_demande']
+    list_filter = ['statut', 'est_renouvellement', 'type_formation', 'date_demande']
+    search_fields = ['nom', 'prenom', 'email']
     fieldsets = (
         ('Stagiaire', {
             'fields': ('stagiaire_existant', 'nom', 'prenom', 'email', 'telephone'),
             'description': 'Sélectionnez un stagiaire existant ou remplissez les infos manuelles'
         }),
-        ('Emploi', {'fields': ('poste', 'date_embauche')}),
-        ('Entreprise', {'fields': ('entreprise',)}),
-        ('Formations demandées', {'fields': ('habilitations_demandees',)}),
+        ('Profil', {'fields': ('statut_professionnel',)}),
+        ('Formations demandées', {'fields': ('type_formation', 'spécialisations_demandees')}),
         ('Renouvellement', {'fields': ('est_renouvellement', 'titre_renouvelle')}),
         ('Informations', {'fields': ('notes',)}),
         ('Traitement', {'fields': ('statut', 'session_assignee', 'stagiaire_cree', 'date_traitement', 'traite_par')}),
@@ -226,3 +226,75 @@ class DemandeFormationAdmin(admin.ModelAdmin):
         return obj.nombre_stagiaires
     nombre_stagiaires.short_description = "Nb stagiaires"
 
+# ===== Gestion des formations (TypeFormation, Specialisation, TenantFormation) =====
+
+@admin.register(TypeFormation)
+class TypeFormationAdmin(admin.ModelAdmin):
+    list_display = ['nom', 'code', 'titre_officiel_short', 'is_global']
+    fieldsets = (
+        ('Identification', {'fields': ('code', 'nom')}),
+        ('Titre officiel', {
+            'fields': ('titre_officiel',),
+            'description': 'Remplir pour les formations globales (ex: Préparation à l\'habilitation électrique - NF C18-510)'
+        }),
+        ('Description', {'fields': ('description',)}),
+        ('Validité par défaut', {'fields': ('duree_validite_mois',)}),
+        ('Custom (optionnel)', {
+            'fields': ('created_by_tenant',),
+            'description': 'Laisser vide pour une formation globale'
+        }),
+    )
+    
+    def titre_officiel_short(self, obj):
+        if obj.titre_officiel:
+            return obj.titre_officiel[:50] + "..." if len(obj.titre_officiel) > 50 else obj.titre_officiel
+        return "—"
+    titre_officiel_short.short_description = "Titre officiel"
+    
+    def is_global(self, obj):
+        return "🌍 Global" if obj.created_by_tenant is None else f"🏢 {obj.created_by_tenant.nom_public}"
+    is_global.short_description = "Type"
+
+@admin.register(Specialisation)
+class SpecialisationAdmin(admin.ModelAdmin):
+    list_display = ['code', 'nom', 'type_formation', 'duree_validite_mois', 'actif']
+    list_filter = ['type_formation', 'actif', 'duree_validite_mois']
+    search_fields = ['code', 'nom']
+    fieldsets = (
+        ('Identification', {'fields': ('code', 'nom', 'type_formation')}),
+        ('Description', {'fields': ('description',)}),
+        ('Compétences', {'fields': ('savoirs', 'savoirs_faire')}),
+        ('Validité', {'fields': ('duree_validite_mois',)}),
+        ('Statut', {'fields': ('actif',)}),
+    )
+
+
+@admin.register(TenantFormation)
+class TenantFormationAdmin(admin.ModelAdmin):
+    list_display = ['tenant', 'type_formation', 'nb_specialisations', 'actif', 'date_activation']
+    list_filter = ['tenant', 'actif', 'date_activation']
+    search_fields = ['tenant__nom_public', 'type_formation__nom']
+    fieldsets = (
+        ('Association', {'fields': ('tenant', 'type_formation')}),
+        ('Spécialisations proposées', {'fields': ('spécialisations',)}),
+        ('Statut', {'fields': ('actif',)}),
+    )
+    filter_horizontal = ('spécialisations',)
+    readonly_fields = ('date_activation',)
+    
+    def nb_specialisations(self, obj):
+        return obj.spécialisations.count()
+    nb_specialisations.short_description = "Spécialisations"
+
+
+@admin.register(Tenant)
+class TenantAdmin(admin.ModelAdmin):
+    list_display = ['nom_public', 'slug', 'organisme_formation', 'actif', 'date_creation']
+    list_filter = ['actif', 'date_creation']
+    search_fields = ['nom_public', 'slug', 'organisme_formation__nom']
+    fieldsets = (
+        ('Identification', {'fields': ('nom_public', 'slug', 'organisme_formation')}),
+        ('Branding', {'fields': ('logo', 'couleur_primaire', 'couleur_secondaire')}),
+        ('Domaine', {'fields': ('domaine',)}),
+        ('Statut', {'fields': ('actif',)}),
+    )

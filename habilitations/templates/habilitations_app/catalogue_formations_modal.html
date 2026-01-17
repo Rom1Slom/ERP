@@ -1,0 +1,263 @@
+<!-- Modal Catalogue des Formations -->
+<div class="modal fade" id="catalogueFormationsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-book"></i> Catalogue des formations
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Liste des formations existantes -->
+                <div id="catalogueList" class="mb-4">
+                    <h6 class="text-muted">Formations proposées</h6>
+                    <div id="formationsList" class="list-group">
+                        <p class="text-muted small">Chargement...</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Formulaire d'ajout -->
+                <h6 class="text-muted mb-3">Ajouter une formation</h6>
+                <form id="catalogueForm" method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="typeFormationSelect" class="form-label">Type de formation</label>
+                        <select id="typeFormationSelect" name="type_formation" class="form-select" required>
+                            <option value="">-- Sélectionner --</option>
+                        </select>
+                    </div>
+
+                    <!-- NOUVEAU : Champ pour intitulé custom -->
+                    <div id="customFormationDiv" class="mb-3 d-none">
+                        <label for="customFormationNom" class="form-label">Intitulé de la formation</label>
+                        <input type="text" id="customFormationNom" name="custom_nom" class="form-control" 
+                            placeholder="Ex: Formation sécurité interne">
+                        <small class="text-muted">Cette formation sera ajoutée à votre catalogue uniquement</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Spécialisations</label>
+                        <div id="specialisationsContainer" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            <p class="text-muted small">Sélectionnez d'abord une formation</p>
+                        </div>
+                    </div>
+
+                    <div id="formErrors" class="alert alert-danger d-none"></div>
+                    
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle"></i> Ajouter au catalogue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// URLs Django pour les endpoints AJAX
+const URLS = {
+    typeFormations: '{% url "api_type_formations" %}',
+    catalogueList: '{% url "catalogue_formations_list" %}',
+    catalogueAdd: '{% url "catalogue_formations_add" %}',
+    catalogueDelete: '{% url "catalogue_formations_delete" 0 %}',
+    catalogueToggle: '{% url "catalogue_formations_toggle" 0 %}'
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const typeFormationSelect = document.getElementById('typeFormationSelect');
+    const specialisationsContainer = document.getElementById('specialisationsContainer');
+    const catalogueForm = document.getElementById('catalogueForm');
+    const formationsList = document.getElementById('formationsList');
+    const formErrors = document.getElementById('formErrors');
+
+    // Données pour les spécialisations par type de formation
+    let typeFormationData = {};
+
+   // Charger les types de formation
+fetch(URLS.typeFormations)
+    .then(r => r.json())
+    .then(data => {
+        typeFormationSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+        data.types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.id;
+            option.textContent = type.nom;
+            option.dataset.specialisations = JSON.stringify(type.spécialisations);
+            typeFormationSelect.appendChild(option);
+            typeFormationData[type.id] = type.spécialisations;
+        });
+        
+        // NOUVEAU : Ajouter option "Autre"
+        if (data.allow_custom) {
+            const optionAutre = document.createElement('option');
+            optionAutre.value = 'autre';
+            optionAutre.textContent = '➕ Autre (créer une nouvelle formation)';
+            typeFormationSelect.appendChild(optionAutre);
+        }
+    });
+
+   // Afficher spécialisations selon type sélectionné
+typeFormationSelect.addEventListener('change', function() {
+    const typeId = this.value;
+    
+    // NOUVEAU : Si "Autre", afficher champ texte
+    const customDiv = document.getElementById('customFormationDiv');
+    const customInput = document.getElementById('customFormationNom');
+    
+    if (typeId === 'autre') {
+        customDiv.classList.remove('d-none');
+        customInput.required = true;
+        specialisationsContainer.innerHTML = '<p class="text-muted small">Les spécialisations seront ajoutées après création</p>';
+        return;
+    } else {
+        customDiv.classList.add('d-none');
+        customInput.required = false;
+        customInput.value = '';
+    }
+    
+    // Comportement normal pour formations existantes
+    if (!typeId) {
+        specialisationsContainer.innerHTML = '<p class="text-muted small">Sélectionnez d\'abord une formation</p>';
+        return;
+    }
+
+    const specs = typeFormationData[typeId] || [];
+    specialisationsContainer.innerHTML = '';
+    
+    if (specs.length === 0) {
+        specialisationsContainer.innerHTML = '<p class="text-muted small">Aucune spécialisation disponible</p>';
+        return;
+    }
+
+    specs.forEach(spec => {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = `
+            <input class="form-check-input" type="checkbox" name="spécialisations" 
+                   value="${spec.id}" id="spec_${spec.id}">
+            <label class="form-check-label" for="spec_${spec.id}">
+                <strong>${spec.code}</strong> - ${spec.nom}
+            </label>
+        `;
+        specialisationsContainer.appendChild(div);
+    });
+});
+
+    // Soumettre le formulaire
+    catalogueForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const specialisations = Array.from(document.querySelectorAll('input[name="spécialisations"]:checked'))
+            .map(c => c.value);
+        formData.append('spécialisations', JSON.stringify(specialisations));
+
+        fetch(URLS.catalogueAdd, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                catalogueForm.reset();
+                specialisationsContainer.innerHTML = '<p class="text-muted small">Sélectionnez d\'abord une formation</p>';
+                loadCatalogueFormations();
+            } else {
+                showFormErrors(data.errors);
+            }
+        })
+        .catch(err => {
+            formErrors.textContent = 'Erreur : ' + err;
+            formErrors.classList.remove('d-none');
+        });
+    });
+
+    // Charger et afficher le catalogue
+    function loadCatalogueFormations() {
+        fetch(URLS.catalogueList)
+            .then(r => r.json())
+            .then(data => {
+                formationsList.innerHTML = '';
+                if (data.formations.length === 0) {
+                    formationsList.innerHTML = '<p class="text-muted small">Aucune formation au catalogue</p>';
+                    return;
+                }
+
+                data.formations.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'list-group-item';
+                    const statusBadge = f.actif ? 
+                        '<span class="badge bg-success">Actif</span>' :
+                        '<span class="badge bg-secondary">Inactif</span>';
+                    const specsHtml = f.specialisations.length > 0 ?
+                        f.specialisations.map(s => `<span class="badge bg-info me-1">${s}</span>`).join('') :
+                        '<small class="text-muted">Aucune spécialisation</small>';
+                    
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${f.nom}</h6>
+                                <small class="text-muted">Ajoutée le ${f.date_activation}</small><br>
+                                <div class="mt-2">${specsHtml}</div>
+                            </div>
+                            <div>
+                                ${statusBadge}
+                                <button class="btn btn-sm btn-outline-warning ms-2" onclick="window.toggleFormation(${f.id})">
+                                    ${f.actif ? 'Désactiver' : 'Activer'}
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="window.deleteFormation(${f.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    formationsList.appendChild(div);
+                });
+            });
+    }
+
+    function showFormErrors(errors) {
+        let errorHtml = '<strong>Erreurs :</strong><ul>';
+        for (let field in errors) {
+            errorHtml += `<li>${field}: ${errors[field].join(', ')}</li>`;
+        }
+        errorHtml += '</ul>';
+        formErrors.innerHTML = errorHtml;
+        formErrors.classList.remove('d-none');
+    }
+
+    // Charger au démarrage
+    loadCatalogueFormations();
+
+    // Rendre les fonctions globales
+    window.toggleFormation = function(id) {
+        const url = URLS.catalogueToggle.replace('0', id);
+        fetch(url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                loadCatalogueFormations();
+            }
+        });
+    };
+
+    window.deleteFormation = function(id) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette formation ?')) return;
+        
+        const url = URLS.catalogueDelete.replace('0', id);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.innerHTML = `<input name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">`;
+        document.body.appendChild(form);
+        form.submit();
+    };
+});
+</script>

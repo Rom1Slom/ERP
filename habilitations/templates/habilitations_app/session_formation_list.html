@@ -16,9 +16,9 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Habilitation</label>
+                    <label class="form-label">Formation</label>
                     <select name="habilitation" class="form-select">
-                        <option value="">Toutes les habilitations</option>
+                        <option value="">Toutes les formations</option>
                         {% for hab in habilitations %}
                         <option value="{{ hab.id }}" {% if request.GET.habilitation == hab.id|stringformat:"s" %}selected{% endif %}>
                             {{ hab.code }} - {{ hab.nom }}

@@ -46,6 +46,33 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="type_formation" class="form-label">
+                                    Type de formation <span class="text-danger">*</span>
+                                </label>
+                                <select name="type_formation" id="type_formation" class="form-select" required>
+                                    {% for value, label in type_formation_choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">
+                                    Intra : formation sur votre site | Inter : formation chez l'OF
+                                </small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="lieu_formation" class="form-label">
+                                    Lieu de formation <span class="text-danger">*</span>
+                                </label>
+                                <select name="lieu_formation" id="lieu_formation" class="form-select" required>
+                                    {% for value, label in lieu_formation_choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">
                                 Stagiaires concernés <span class="text-danger">*</span>

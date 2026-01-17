@@ -23,6 +23,10 @@ def role_required(roles):
         def wrapper(request, *args, **kwargs):
             try:
                 profil = request.user.profil
+                # Superuser always passes to avoid redirect loops when the profil is missing
+                if request.user.is_superuser:
+                    return view_func(request, *args, **kwargs)
+
                 if profil.role in roles or profil.est_super_admin:
                     return view_func(request, *args, **kwargs)
             except (AttributeError, ProfilUtilisateur.DoesNotExist):

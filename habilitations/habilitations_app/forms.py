@@ -5,7 +5,8 @@ from crispy_forms.layout import Layout, Fieldset, Row, Column, Submit, HTML, Div
 from .models import (
     Stagiaire, Formation, ValidationCompetence, Titre, 
     AvisFormation, Entreprise, Habilitation, RenouvellementHabilitation,
-    DemandeStagiaire, SessionFormation, InvitationEntreprise
+    DemandeStagiaire, SessionFormation, InvitationEntreprise,
+    TypeFormation, Specialisation
 )
 
 
@@ -46,7 +47,7 @@ class InvitationEntrepriseForm(forms.ModelForm):
         model = InvitationEntreprise
         fields = ['email_contact']
         widgets = {
-            'email_contact': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email du responsable PME'})
+            'email_contact': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email du responsable Client'})
         }
     
     def __init__(self, *args, **kwargs):
@@ -287,7 +288,7 @@ class FiltreFormationForm(forms.Form):
 
 
 class DemandeStagiaireForm(forms.ModelForm):
-    """Form pour qu'une entreprise cliente soumette une demande de stagiaire"""
+    """Form pour qu'un stagiaire indépendant soumette une demande"""
     
     # Champ pour sélectionner un stagiaire existant
     stagiaire_existant = forms.ModelChoiceField(
@@ -297,17 +298,17 @@ class DemandeStagiaireForm(forms.ModelForm):
         label="Sélectionner un stagiaire existant (optionnel)"
     )
     
-    # Champs pour habilitations multiples
-    habilitations_demandees = forms.ModelMultipleChoiceField(
-        queryset=Habilitation.objects.all(),
+    # Champs pour spécialisations multiples
+    spécialisations_demandees = forms.ModelMultipleChoiceField(
+        queryset=Specialisation.objects.all(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         required=True,
-        label="Certifications/Habilitations demandées"
+        label="Spécialisations demandées"
     )
     
     class Meta:
         model = DemandeStagiaire
-        fields = ['nom', 'prenom', 'email', 'telephone', 'poste', 'date_embauche', 'notes']
+        fields = ['nom', 'prenom', 'email', 'telephone', 'statut_professionnel', 'notes']
         widgets = {
             'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du stagiaire'}),
             'prenom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Prénom du stagiaire'}),
@@ -379,47 +380,44 @@ class DemandeStagiaireForm(forms.ModelForm):
 
 
 class SessionFormationForm(forms.ModelForm):
-    """Form pour créer/modifier une session de formation (secrétaire kompetans)"""
+    """Form pour créer/modifier une session de formation"""
     class Meta:
         model = SessionFormation
-        fields = ['numero_session', 'habilitation', 'date_debut', 'date_fin', 'organisme_formation', 
-                  'lieu', 'formateur_nom', 'nombre_places', 'statut', 'notes']
+        fields = ['numero_session', 'type_formation', 'spécialisations', 
+                  'date_debut', 'date_fin', 'lieu', 'formateurs',
+                  'nombre_places', 'statut', 'notes']
         widgets = {
             'numero_session': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: SESS-2026-001'}),
-            'habilitation': forms.Select(attrs={'class': 'form-control'}),
-            'date_debut': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'date_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'organisme_formation': forms.TextInput(attrs={'class': 'form-control'}),
+            'type_formation': forms.Select(attrs={'class': 'form-control'}),
+            'spécialisations': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            'formateurs': forms.SelectMultiple(attrs={
+                'class': 'form-control', 
+                'size': '5',
+                'style': 'height: auto;'
+            }),
+            'date_debut': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
+            'date_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
             'lieu': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Adresse du lieu de formation'}),
-            'formateur_nom': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre_places': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '50'}),
             'statut': forms.Select(attrs={'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+        labels = {
+            'type_formation': 'Type de formation',
+            'spécialisations': 'Spécialisations',
+            'formateurs': 'Formateurs',
+        }
     
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.layout = Layout(
-            Fieldset('Identification de la session',
-                Row(Column('numero_session', css_class='col-md-6'),
-                    Column('habilitation', css_class='col-md-6')),
-            ),
-            Fieldset('Calendrier et lieu',
-                Row(Column('date_debut', css_class='col-md-6'),
-                    Column('date_fin', css_class='col-md-6')),
-                'lieu',
-            ),
-            Fieldset('Organisation',
-                Row(Column('organisme_formation', css_class='col-md-6'),
-                    Column('formateur_nom', css_class='col-md-6')),
-                Row(Column('nombre_places', css_class='col-md-6'),
-                    Column('statut', css_class='col-md-6')),
-            ),
-            'notes',
-            Submit('submit', 'Enregistrer la session', css_class='btn btn-primary mt-3')
-        )
+        
+        # Filtrer les formateurs disponibles pour l'OF courant
+        if user and hasattr(user, 'profil'):
+            from .services import formateurs_of
+            of = user.profil.entreprise
+            if of:
+                self.fields['formateurs'].queryset = formateurs_of(of)
 
 
 class AssignerDemandeForm(forms.Form):
@@ -440,3 +438,53 @@ class AssignerDemandeForm(forms.Form):
                 habilitations_demandees=habilitation
             )
 
+# ==================== FORMATEURS ====================
+
+class FormateurForm(forms.Form):
+    """Formulaire pour créer/modifier un formateur"""
+    # Option 1 : Sélectionner un user existant
+    user_id = forms.ModelChoiceField(
+        queryset=User.objects.filter(profil__role='formateur').select_related('profil'),
+        required=False,
+        label="Utilisateur existant formateur",
+        empty_label="-- Créer un nouvel utilisateur --"
+    )
+    
+    # Option 2 : Créer un nouvel utilisateur
+    first_name = forms.CharField(max_length=150, required=False, label="Prénom")
+    last_name = forms.CharField(max_length=150, required=False, label="Nom")
+    email = forms.EmailField(required=False, label="Email")
+    telephone = forms.CharField(max_length=20, required=False, label="Téléphone")
+    
+    # Statut
+    actif = forms.BooleanField(required=False, initial=True, label="Actif")
+    
+    def clean(self):
+        cleaned = super().clean()
+        user_id = cleaned.get('user_id')
+        first_name = cleaned.get('first_name')
+        last_name = cleaned.get('last_name')
+        email = cleaned.get('email')
+        
+        # Vérifier qu'on a soit un user existant, soit les infos pour en créer un
+        if not user_id:
+            if not (first_name and last_name and email):
+                raise forms.ValidationError(
+                    "Renseigner un utilisateur existant OU créer un nouvel utilisateur (prénom, nom, email requis)."
+                )
+        return cleaned
+
+
+class FormateurCompetencesForm(forms.Form):
+    """Formulaire pour assigner les spécialisations à un formateur"""
+    spécialisations = forms.ModelMultipleChoiceField(
+        queryset=Specialisation.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Spécialisations maîtrisées"
+    )
+    
+    def __init__(self, *args, specialisations_qs=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if specialisations_qs:
+            self.fields['spécialisations'].queryset = specialisations_qs

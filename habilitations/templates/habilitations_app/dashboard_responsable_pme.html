@@ -1,16 +1,16 @@
 {% extends 'habilitations_app/base.html' %}
 
-{% block title %}Dashboard Client{% endblock %}
+{% block title %}Dashboard Responsable Client{% endblock %}
 
 {% block page_content %}
 <div class="container mt-4">
     <div class="row align-items-center mb-4">
         <div class="col">
             <h1><i class="bi bi-building"></i> Dashboard de suivi</h1>
-            <p class="text-muted">Gestion des salariés habilitables et suivi des formations</p>
+            <p class="text-muted">{{ entreprise.nom }} - Gestion des salariés et suivi des formations</p>
         </div>
         <div class="col-auto">
-            <span class="badge bg-primary">Client</span>
+            <span class="badge bg-primary">Responsable Client</span>
         </div>
     </div>
 
@@ -20,7 +20,7 @@
             <div class="card text-white bg-primary">
                 <div class="card-body">
                     <h5 class="card-title">Salariés</h5>
-                    <p class="card-text display-4">{{ stagiaires }}</p>
+                    <p class="card-text display-4">{{ total_stagiaires }}</p>
                 </div>
             </div>
         </div>
@@ -63,6 +63,46 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endif %}
+
+    <!-- Demandes de formation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-send"></i> 
+                        Mes demandes de formation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">En attente de validation</h6>
+                                    <p class="display-6 mb-0">{{ demandes_en_attente }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Approuvées</h6>
+                                    <p class="display-6 mb-0">{{ demandes_approuvees }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'creer_demande_formation' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nouvelle demande de formation
+                    </a>
+                    <a href="{% url 'liste_demandes_formation' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list-check"></i> Voir toutes mes demandes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Formations récentes -->
     <div class="row mt-5">

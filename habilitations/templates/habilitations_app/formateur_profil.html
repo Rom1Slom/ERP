@@ -1,0 +1,28 @@
+{% extends 'habilitations_app/base.html' %}
+{% block title %}Mon profil{% endblock %}
+{% block page_content %}
+<div class="container mt-4">
+    <h2>Mon profil</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Prénom</label>
+            <input type="text" name="first_name" class="form-control" value="{{ profil.user.first_name }}">
+        </div>
+        <div class="mb-3">
+            <label>Nom</label>
+            <input type="text" name="last_name" class="form-control" value="{{ profil.user.last_name }}">
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" value="{{ profil.user.email }}">
+        </div>
+        <div class="mb-3">
+            <label>Téléphone</label>
+            <input type="text" name="telephone" class="form-control" value="{{ profil.telephone }}">
+        </div>
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+    <a href="{% url 'dashboard_formateur' %}" class="btn btn-secondary mt-3">Retour</a>
+</div>
+{% endblock %}

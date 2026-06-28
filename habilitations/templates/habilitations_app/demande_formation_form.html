@@ -26,17 +26,7 @@
                         {% csrf_token %}
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="habilitation" class="form-label">
-                                    Type d'habilitation <span class="text-danger">*</span>
-                                </label>
-                                <select name="habilitation" id="habilitation" class="form-select" required>
-                                    <option value="">-- Sélectionnez une habilitation --</option>
-                                    {% for hab in habilitations %}
-                                        <option value="{{ hab.id }}">{{ hab.code }} - {{ hab.nom }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            <!-- Habilitation supprimée -->
 
                             <div class="col-md-6 mb-3">
                                 <label for="date_souhaitee" class="form-label">

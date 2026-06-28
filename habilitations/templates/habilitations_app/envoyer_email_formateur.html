@@ -1,0 +1,13 @@
+{% extends 'habilitations_app/base.html' %}
+{% block page_content %}
+<div class="container mt-4">
+    <h2>Envoyer un email aux formateurs</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Envoyer</button>
+        <a href="{% url 'detail_session_formation' session.id %}" class="btn btn-secondary">Annuler</a>
+        <a href="{% url 'pdf_stagiaires_qr' session.id %}">Télécharger la feuille d’émargement avec QR codes</a>
+    </form>
+</div>
+{% endblock %}

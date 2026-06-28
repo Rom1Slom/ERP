@@ -18,3 +18,25 @@
     </div>
 </div>
 {% endblock %}
+
+<script>
+$('#typeFormationSelect').on('change', function() {
+    var typeFormationId = $(this).val();
+    if (typeFormationId) {
+        $.ajax({
+            url: 'api/type-formation/' + typeFormationId + '/specialisations/', 
+            data: { type_formation_id: typeFormationId },
+            success: function(data) {
+                var $spec = $('#id_spécialisations');
+                $spec.empty();
+                $.each(data.specialisations, function(i, spec) {
+                    $spec.append(
+                        $('<option>', { value: spec.id, text: spec.nom })
+                    );
+                });
+            }
+        });
+    }
+});
+
+</script>

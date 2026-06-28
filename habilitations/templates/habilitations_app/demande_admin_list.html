@@ -21,17 +21,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Habilitation</label>
-                    <select name="habilitation" class="form-select">
-                        <option value="">Toutes les habilitations</option>
-                        {% for hab in habilitations %}
-                        <option value="{{ hab.id }}" {% if request.GET.habilitation == hab.id|stringformat:"s" %}selected{% endif %}>
-                            {{ hab.code }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <!-- Habilitation supprimée -->
                 <div class="col-md-3">
                     <label class="form-label">Statut</label>
                     <select name="statut" class="form-select">
@@ -64,7 +54,7 @@
                     <th>Stagiaire</th>
                     <th>Email</th>
                     <th>Poste</th>
-                    <th>Habilitation</th>
+                    <!-- Habilitation supprimée -->
                     <th>Statut</th>
                     <th>Session</th>
                     <th>Actions</th>
@@ -78,7 +68,7 @@
                     <td><strong>{{ demande.nom_complet }}</strong></td>
                     <td><small>{{ demande.email }}</small></td>
                     <td><small>{{ demande.poste }}</small></td>
-                    <td><span class="badge bg-info">{{ demande.habilitation_demandee.code }}</span></td>
+                    <!-- Habilitation supprimée -->
                     <td>
                         {% if demande.statut == 'en_attente' %}
                             <span class="badge bg-warning text-dark">En attente</span>
@@ -100,11 +90,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if demande.statut == 'en_attente' %}
-                        <a href="{% url 'liste_sessions_formation' %}?habilitation={{ demande.habilitation_demandee.id }}" class="btn btn-sm btn-primary" title="Trouver une session">
-                            <i class="bi bi-calendar-plus"></i>
-                        </a>
-                        {% endif %}
+                        <!-- Habilitation supprimée -->
                     </td>
                 </tr>
                 {% endfor %}

@@ -34,7 +34,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>Stagiaire</th>
-                    <th>Habilitation</th>
+                    <!-- Habilitation supprimée -->
                     <th>Début</th>
                     <th>Fin prévue</th>
                     <th>Statut</th>
@@ -45,7 +45,7 @@
                 {% for formation in formations %}
                 <tr>
                     <td>{{ formation.stagiaire.nom_complet }}</td>
-                    <td><span class="badge bg-info">{{ formation.habilitation.code }}</span></td>
+                    <!-- Habilitation supprimée -->
                     <td>{{ formation.date_debut|date:"d/m/Y" }}</td>
                     <td>{{ formation.date_fin_prevue|date:"d/m/Y" }}</td>
                     <td>

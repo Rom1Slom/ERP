@@ -13,7 +13,7 @@
                 <tr>
                     <th>Numéro</th>
                     <th>Stagiaire</th>
-                    <th>Habilitation</th>
+                    <!-- Habilitation supprimée -->
                     <th>Délivrance</th>
                     <th>Expiration</th>
                     <th>Statut</th>
@@ -25,7 +25,7 @@
                 <tr>
                     <td>{{ titre.numero_titre }}</td>
                     <td>{{ titre.stagiaire.nom_complet }}</td>
-                    <td><span class="badge bg-info">{{ titre.habilitation.code }}</span></td>
+                    <!-- Habilitation supprimée -->
                     <td>{{ titre.date_delivrance|date:"d/m/Y" }}</td>
                     <td>
                         {{ titre.date_expiration|date:"d/m/Y" }}

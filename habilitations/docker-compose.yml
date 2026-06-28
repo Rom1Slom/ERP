@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+    # Ajoute ici d'autres variables d'environnement si besoin
+# Si tu ajoutes une base de données, tu pourras ajouter un service db ici
+
+# Explications :
+# - build: . → construit l'image à partir du Dockerfile
+# - volumes: .:/app → synchronise le code local avec le conteneur (pratique en dev)
+# - ports: "8000:8000" → rend le serveur accessible sur localhost:8000
+# - environment: DEBUG=1 → active le mode debug Django

@@ -29,6 +29,22 @@ class Entreprise(models.Model):
         related_name='entreprises',
         help_text="Tenant (OF) propriétaire – obligatoire pour les Clients"
     )
+    cree_par_admin = models.BooleanField(default=False, help_text="Créé par l'admin (True) ou par un OF (False)")
+    visible_par_admin = models.BooleanField(default=True, help_text="L'OF peut masquer ce client à l'admin")
+    of_associes = models.ManyToManyField(
+        'Tenant',
+        related_name='clients_associes',
+        blank=True,
+        help_text="OF ayant accès à ce client"
+    )
+    cree_par_admin = models.BooleanField(default=False, help_text="Indique si l'entreprise a été créée par un admin OF")
+    visible_par_admin =   models.BooleanField(default=True, help_text="Indique si l'entreprise est visible par les admins OF")
+    of_associes = models.ManyToManyField(
+        'Tenant',
+        blank=True,
+        related_name='client_associes',
+        help_text="Organismes de Formation ayant accès à ce client" 
+            )
     
     class Meta:
         verbose_name_plural = "Entreprises"
@@ -75,7 +91,7 @@ class Tenant(models.Model):
 
 class TypeFormation(models.Model):
     """Catégorie de formation (Habilitation, CACES, etc.)"""
-    code = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50)
     nom = models.CharField(max_length=255)
     titre_officiel = models.CharField(
         max_length=500, 
@@ -216,56 +232,11 @@ class FormateurAffectation(models.Model):
         return f"{self.formateur} @ {self.entreprise}"
 
 
-class Habilitation(models.Model):
-    """
-    ⚠️ MODÈLE LEGACY - DÉPRÉCIÉ
-    Gardé pour compatibilité avec les anciennes données
-    
-    MIGRATION EN COURS vers : TypeFormation + Specialisation
-    """
-    CATEGORIES = [
-        ('1', 'Basse Tension (BT)'),
-        ('2', 'Haute Tension (HT)'),
-        ('3', 'Mixte'),
-    ]
-    
-    code = models.CharField(max_length=20, unique=True)
-    nom = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    categorie = models.CharField(max_length=10, choices=CATEGORIES)
-    niveau = models.CharField(max_length=10)
-    duree_validite_mois = models.IntegerField(default=36)
-    savoirs = models.TextField(help_text="Liste des savoirs théoriques requis")
-    savoirs_faire = models.TextField(help_text="Liste des savoir-faire pratiques requis")
-    # LIEN VERS NOUVEAU MODÈLE (pour migration)
-    specialisation_liee = models.OneToOneField(
-        Specialisation,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='habilitation_legacy',
-        help_text="Spécialisation moderne correspondante"
-    )
-    date_creation = models.DateTimeField(auto_now_add=True)
-    actif = models.BooleanField(default=True)
-    
-    class Meta:
-        ordering = ['code']
-        verbose_name = "Habilitation (LEGACY)"
-    
-    def __str__(self):
-        return f"{self.code} - {self.nom}"
+
 
 
 class Stagiaire(models.Model):
-    """Model pour les stagiaires en formation
-    
-    Architecture B2B2C:
-    - organisme_formation: L'OF qui gère ce stagiaire (OBLIGATOIRE)
-    - entreprise: La PME employeur (OPTIONNEL)
-      * Si NULL = stagiaire indépendant inscrit directement par l'OF
-      * Si renseigné = stagiaire employé d'une PME cliente de l'OF
-    """
+    """Stagiaire en formation (B2B2C)"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     organisme_formation = models.ForeignKey(
         Entreprise, 
@@ -289,7 +260,6 @@ class Stagiaire(models.Model):
         limit_choices_to={'type_entreprise': 'client'},
         null=True,
         blank=True,
-        help_text="L'entreprise employeur (optionnel, NULL = stagiaire indépendant)"
     )
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
@@ -330,7 +300,7 @@ class Formation(models.Model):
     ]
     
     stagiaire = models.ForeignKey(Stagiaire, on_delete=models.CASCADE, related_name='formations')
-    habilitation = models.ForeignKey(Habilitation, on_delete=models.CASCADE, related_name='formations')
+    # Champ habilitation supprimé (modèle Habilitation supprimé)
     tenant = models.ForeignKey(
         Tenant,
         on_delete=models.CASCADE,
@@ -357,15 +327,13 @@ class Formation(models.Model):
     date_modification = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('stagiaire', 'habilitation')
         ordering = ['-date_debut']
         indexes = [
             models.Index(fields=['tenant', 'statut']),
-            models.Index(fields=['stagiaire', 'habilitation', 'statut']),
         ]
     
     def __str__(self):
-        return f"{self.stagiaire.nom_complet} - {self.habilitation.code}"
+        return f"{self.stagiaire.nom_complet} - {self.numero_session}"
     
     @property
     def est_completee(self):
@@ -386,7 +354,7 @@ class ValidationCompetence(models.Model):
     - Permet validation indépendante de chaque spécialisation
     - Exemple : Stagiaire valide "Habilitation-B1" mais pas "Habilitation-B2"
     
-    LEGACY : Anciens champs (type_competence, titre_competence) gardés pour compat
+    # Champs anciens retirés (type_competence, titre_competence)
     """
     COMPETENCE_TYPES = [
         ('savoir', 'Savoir théorique'),
@@ -408,12 +376,9 @@ class ValidationCompetence(models.Model):
         null=True,
         blank=True,
         related_name='validations',
-        help_text="Spécialisation validée (remplace l'ancien système)"
     )
     
-    # LEGACY : Rendre optionnels pour migration progressive
-    type_competence = models.CharField(max_length=20, choices=COMPETENCE_TYPES, blank=True)
-    titre_competence = models.CharField(max_length=255, blank=True)
+    # Champs anciens retirés
     description = models.TextField(blank=True)
     valide = models.BooleanField(default=False)
     commentaires_validateur = models.TextField(blank=True)
@@ -422,9 +387,8 @@ class ValidationCompetence(models.Model):
     date_creation = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['specialisation', 'type_competence', 'titre_competence']
+        ordering = ['specialisation']
         indexes = [
-            models.Index(fields=['tenant', 'type_competence']),
             models.Index(fields=['specialisation', 'valide']),  # ⭐ Index nouvelle logique
         ]
     
@@ -434,10 +398,10 @@ class ValidationCompetence(models.Model):
         return f"{self.formation} - {self.titre_competence}"
     
     class Meta:
-        unique_together = ('formation', 'titre_competence')
-        ordering = ['type_competence', 'titre_competence']
+        unique_together = ('formation', 'specialisation')
+        ordering = ['specialisation']
         indexes = [
-            models.Index(fields=['tenant', 'type_competence']),
+            models.Index(fields=['tenant', 'specialisation']),
         ]
     
     def __str__(self):
@@ -482,13 +446,7 @@ class Titre(models.Model):
     )
     
     # LEGACY : Habilitation ancienne (remplacée par specialisation)
-    habilitation = models.ForeignKey(
-        Habilitation,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='titres_legacy'
-    )
+    # Champ habilitation supprimé (modèle Habilitation supprimé)
     
     numero_titre = models.CharField(max_length=50, unique=True)
     date_delivrance = models.DateField()
@@ -660,25 +618,7 @@ class SessionFormation(models.Model):
         help_text="Formateurs responsables de la session - doivent maîtriser TOUTES les spécialisations"
     )
     
-    # LEGACY : Habilitation pour compat (garder provisoire)
-    habilitation = models.ForeignKey(
-        Habilitation,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='sessions_legacy',
-        help_text="LEGACY - Voir type_formation et spécialisations"
-    )
-
-    # LEGACY : Formateur unique (User) - garder pour compat, utiliser formateurs M2M en priorité
-    formateur = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='sessions_assignees',
-        help_text="Formateur responsable de la session - doit maîtriser TOUTES les spécialisations"
-    )
+    # Champs anciens retirés
     
     date_debut = models.DateField()
     date_fin = models.DateField()
@@ -785,11 +725,7 @@ class DemandeFormation(models.Model):
         blank=True,
         related_name='demandes_formation'
     )
-    habilitation = models.ForeignKey(
-        Habilitation,
-        on_delete=models.CASCADE,
-        help_text="Type d'habilitation demandée"
-    )
+    # Champ habilitation supprimé (modèle Habilitation supprimé)
     stagiaires = models.ManyToManyField(
         Stagiaire,
         related_name='demandes_formation',
@@ -904,7 +840,7 @@ class DemandeStagiaire(models.Model):
         help_text="Auto-entrepreneur, Freelance, Particulier, etc."
     )
     
-    # ⭐ NOUVEAU : Type de formation (optionnel, pour filtrage rapide)
+    # Type de formation (optionnel, pour filtrage rapide)
     type_formation = models.ForeignKey(
         TypeFormation,
         on_delete=models.SET_NULL,
@@ -922,12 +858,7 @@ class DemandeStagiaire(models.Model):
         help_text="Spécialisations précises demandées"
     )
     
-    # LEGACY : Habilitations (garder provisoire pour compat)
-    habilitations_demandees = models.ManyToManyField(
-        Habilitation,
-        blank=True,
-        related_name='demandes_independants_legacy'
-    )
+    # Champs anciens retirés
     
     # Renouvellement (un indépendant peut renouveler)
     est_renouvellement = models.BooleanField(default=False)
@@ -1056,7 +987,7 @@ class ProfilUtilisateur(models.Model):
     def est_stagiaire(self):
         return self.role == 'stagiaire'
     
-    # Anciens noms pour compatibilité
+    #
     @property
     def est_client(self):
         return self.role in ['responsable_pme', 'client']
@@ -1066,7 +997,7 @@ class ProfilUtilisateur(models.Model):
         return self.role in ['admin_of', 'secretariat', 'formateur']
 
 
-# Model Secretaire supprimé - remplacé par ProfilUtilisateur avec rôle 'of'
+
 
 
 class Consentement(models.Model):

@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .models import TypeFormation, Specialisation
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 
 
 @login_required
@@ -69,3 +71,32 @@ def api_type_formation_specialisations(request, type_id):
     }
     return JsonResponse(data)
 
+
+
+@require_POST
+@csrf_protect
+def api_add_specialisation(request):
+    code = request.POST.get('code')
+    nom = request.POST.get('nom')
+    type_id = request.POST.get('type_formation')
+    errors = {}
+    if not code:
+        errors['code'] = ['Champ requis']
+    if not nom:
+        errors['nom'] = ['Champ requis']
+    if not type_id:
+        errors['type_formation'] = ['Champ requis']
+    if errors:
+        return JsonResponse({'success': False, 'errors': errors})
+    try:
+        type_obj = TypeFormation.objects.get(id=type_id)
+        from django.db import IntegrityError
+        try:
+            spec = Specialisation.objects.create(code=code, nom=nom, type_formation=type_obj)
+            return JsonResponse({'success': True, 'id': spec.id})
+        except IntegrityError:
+            return JsonResponse({'success': False, 'errors': {'__all__': ['Cette spécialisation existe déjà pour ce type de formation.']}})
+    except TypeFormation.DoesNotExist:
+        return JsonResponse({'success': False, 'errors': {'type_formation': ['Type introuvable']}})
+    except Exception as e:
+        return JsonResponse({'success': False, 'errors': {'__all__': [str(e)]}})

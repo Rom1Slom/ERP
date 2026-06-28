@@ -53,6 +53,7 @@
                     <td>
                         <a href="{% url 'stagiaire_detail' stagiaire.id %}" class="btn btn-sm btn-primary">Détails</a>
                         <a href="{% url 'stagiaire_update' stagiaire.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                        <a href="{% url 'inscrire_stagiaire_session' stagiaire.id %}" class="btn btn-sm btn-success">Inscrire à une session</a>
                     </td>
                 </tr>
                 {% endfor %}

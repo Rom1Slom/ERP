@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+.env
+venv/
+.env*/
+.git/
+.gitignore
+node_modules/
+staticfiles/
+media/
+# Ajoute ici tout ce que tu ne veux pas dans l'image Docker

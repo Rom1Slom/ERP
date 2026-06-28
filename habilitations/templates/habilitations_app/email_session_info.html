@@ -1,0 +1,17 @@
+Bonjour {{ noms_formateurs }},<br><br>
+Vous êtes formateur pour la session suivante :<br>
+<ul>
+  <li>Intitulé : {{ session.type_formation.nom }}</li>
+  <li>Numéro de session : {{ session.numero_session }}</li>
+  <li>Date : {{ session.date_debut|date:"d/m/Y" }} au {{ session.date_fin|date:"d/m/Y" }}</li>
+  <li>Lieu : {{ session.lieu }}</li>
+  <li>Nombre de stagiaires : {{ stagiaires_count }}</li>
+  <li>Heure de début : {{ session.heure_debut|default:"-" }}</li>
+  <li>Heure de fin : {{ session.heure_fin|default:"-" }}</li>
+</ul>
+<p>
+    <a href="{{ lien_pdf }}">Télécharger la feuille d’émargement avec QR codes</a>
+</p>
+Merci de vous connecter à la plateforme pour plus d’informations.
+
+(Prochainement : liens PDF, contrats, listes, etc.)

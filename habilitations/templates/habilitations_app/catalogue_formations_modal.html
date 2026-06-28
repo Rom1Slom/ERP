@@ -9,52 +9,290 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Liste des formations existantes -->
-                <div id="catalogueList" class="mb-4">
-                    <h6 class="text-muted">Formations proposées</h6>
-                    <div id="formationsList" class="list-group">
-                        <p class="text-muted small">Chargement...</p>
-                    </div>
-                </div>
-
-                <hr>
-
-                <!-- Formulaire d'ajout -->
-                <h6 class="text-muted mb-3">Ajouter une formation</h6>
+                <!-- Liste fixe des formations réglementaires -->
                 <form id="catalogueForm" method="post">
                     {% csrf_token %}
-                    
+                    <h6 class="text-muted">Formations réglementaires proposées</h6>
                     <div class="mb-3">
-                        <label for="typeFormationSelect" class="form-label">Type de formation</label>
-                        <select id="typeFormationSelect" name="type_formation" class="form-select" required>
-                            <option value="">-- Sélectionner --</option>
-                        </select>
-                    </div>
-
-                    <!-- NOUVEAU : Champ pour intitulé custom -->
-                    <div id="customFormationDiv" class="mb-3 d-none">
-                        <label for="customFormationNom" class="form-label">Intitulé de la formation</label>
-                        <input type="text" id="customFormationNom" name="custom_nom" class="form-control" 
-                            placeholder="Ex: Formation sécurité interne">
-                        <small class="text-muted">Cette formation sera ajoutée à votre catalogue uniquement</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Spécialisations</label>
-                        <div id="specialisationsContainer" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
-                            <p class="text-muted small">Sélectionnez d'abord une formation</p>
+                        <div class="list-group">
+                            <!-- Liste des 20 formations réglementaires -->
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="habilitation_electrique"> Habilitation électrique
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B0"> B0 : Exécutant d’opérations non électriques à proximité d’installations basse tension</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H0"> H0 : Exécutant d’opérations non électriques à proximité d’installations haute tension</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H0V"> H0V : Exécutant d’opérations non électriques au voisinage renforcé HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BS"> BS : Chargé d’interventions simples en basse tension</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BR"> BR : Chargé d’interventions générales en basse tension</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BE_Manoeuvre"> BE Manœuvre : Chargé de manœuvres électriques</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B1"> B1 : Exécutant électricien de travaux électriques BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B1V"> B1V : Exécutant électricien BT au voisinage</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B1T"> B1T : Exécutant électricien de travaux sous tension BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B2"> B2 : Chargé de travaux électriques BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B2V"> B2V : Chargé de travaux électriques BT au voisinage</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="B2T"> B2T : Chargé de travaux sous tension BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BC"> BC : Chargé de consignation BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BF"> BF : Chargé d’interventions en fouilles à proximité d’ouvrages électriques BT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BE_Essais"> BE Essais : Chargé d’essais électriques</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BE_Verifications"> BE Vérifications : Chargé de vérifications réglementaires</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="BE_Mesurage"> BE Mesurage : Chargé de mesurages électriques</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H1"> H1 : Exécutant électricien HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H1V"> H1V : Exécutant électricien HT au voisinage</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H2"> H2 : Chargé de travaux électriques HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="H2V"> H2V : Chargé de travaux électriques HT au voisinage</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HC"> HC : Chargé de consignation HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HF"> HF : Chargé d’interventions en fouilles à proximité d’ouvrages électriques HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HE_Manoeuvre"> HE Manœuvre : Chargé de manœuvres HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HE_Essais"> HE Essais : Chargé d’essais HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HE_Verification"> HE Vérification : Chargé de vérifications HT</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_elec" value="HE_Mesurage"> HE Mesurage : Chargé de mesurages HT</label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="sst"> Sauveteur Secouriste du Travail (SST)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_sst" value="sst"> SST : Sauveteur Secouriste du Travail
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_sst" value="mac_sst"> MAC SST : Maintien et Actualisation des Compétences SST
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="incendie"> Formation incendie
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_incendie" value="extincteurs"> Manipulation des extincteurs</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_incendie" value="epi"> Équipier de première intervention (EPI)</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_incendie" value="esi"> Équipier de seconde intervention (ESI)</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_incendie" value="guide_file"> Guide-file / Serre-file</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_incendie" value="evacuation"> Formation évacuation incendie</label>
+                                </div>
+                            </div>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="gestes_postures"> Gestes et postures
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="catec"> CATEC (Certificat d'Aptitude à Travailler en Espaces Confinés)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_catec" value="pre_catec"> Pré-CATEC® — Préparer aux bases de sécurité
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_catec" value="catec_intervenant"> CATEC® — Intervenant
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_catec" value="catec_surveillant"> CATEC® — Surveillant
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_catec" value="mac_catec"> MAC CATEC® — Recyclage des compétences
+                                    </label>
+                                </div>
+                            </div>
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="risques_chimiques"> Risques chimiques
+                            </label>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="caces"> CACES (chariots, nacelles, engins)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R482"> CACES® R482 : engins de chantier
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R484"> CACES® R484 : ponts roulants
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R485"> CACES® R485 : gerbeurs à conducteur accompagnant
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R486"> CACES® R486 : nacelles élévatrices (PEMP)
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R489"> CACES® R489 : chariots élévateurs (cariste)
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_caces" value="R490"> CACES® R490 : grues auxiliaires de chargement
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="aipr"> AIPR (proximité réseaux)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_aipr" value="operateur"> AIPR Opérateur : Autorisation d’Intervention à Proximité des Réseaux – Opérateur
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_aipr" value="encadrant"> AIPR Encadrant : Autorisation d’Intervention à Proximité des Réseaux – Encadrant
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_aipr" value="concepteur"> AIPR Concepteur : Autorisation d’Intervention à Proximité des Réseaux – Concepteur
+                                    </label>
+                                </div>
+                            </div>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="atex"> ATEX (atmosphères explosives)
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="epi"> Port des EPI
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="engins_specifiques"> Conduite d’engins spécifiques
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="securite_routiere"> Sécurité routière
+                            </label>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="premiers_secours"> Premiers secours (PSC1, PSE1, PSE2)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="psc1"> PSC1 : Prévention et Secours Civiques de niveau 1
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="mac_psc1"> MAC PSC1 : Maintien et Actualisation des Compétences PSC1
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="pse1"> PSE1 : Premiers Secours en Équipe de niveau 1
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="mac_pse1"> MAC PSE1 : Maintien et Actualisation des Compétences PSE1
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="pse2"> PSE2 : Premiers Secours en Équipe de niveau 2
+                                    </label>
+                                    <label class="form-check-label w-100">
+                                        <input class="form-check-input me-2" type="checkbox" name="specialisations_secours" value="mac_pse2"> MAC PSE2 : Maintien et Actualisation des Compétences PSE2
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="haccp"> Sécurité alimentaire (HACCP)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="initial"> HACCP initial (formation de base)</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="recyclage"> HACCP recyclage (mise à jour des compétences)</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="restauration_collective"> HACCP secteur restauration collective</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="restauration_commerciale"> HACCP secteur restauration commerciale</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="agroalimentaire"> HACCP secteur agroalimentaire</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="grande_distribution"> HACCP secteur grande distribution</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="boulangerie_patisserie"> HACCP secteur boulangerie/pâtisserie</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="metiers_de_bouche"> HACCP secteur métiers de bouche (boucher, charcutier, traiteur…)</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="industrie_alimentaire"> HACCP secteur industrie alimentaire</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_haccp" value="responsable_qualite"> HACCP responsable qualité/sécurité alimentaire</label>
+                                </div>
+                            </div>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="risques_biologiques"> Risques biologiques
+                            </label>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="amiante"> Risques liés à l’amiante
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="ss4"> Amiante sous-section 4 (SS4) : intervention sur matériaux contenant de l’amiante</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="ss3"> Amiante sous-section 3 (SS3) : désamiantage</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="encadrement_ss4"> Amiante encadrement SS4</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="encadrement_ss3"> Amiante encadrement SS3</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="operateur_ss4"> Amiante opérateur SS4</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="operateur_ss3"> Amiante opérateur SS3</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_amiante" value="prevention"> Amiante prévention/sensibilisation</label>
+                                </div>
+                            </div>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="signalisation_chantier"> Signalisation temporaire de chantier
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="travail_isole"> Travail isolé
+                            </label>
+                            <div class="mb-2">
+                                <label class="form-check-label w-100">
+                                    <input class="form-check-input me-2" type="checkbox" name="formations" value="rps"> Risques psychosociaux (RPS)
+                                </label>
+                                <div class="ms-4 mt-1">
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="sensibilisation"> Sensibilisation aux RPS</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="referent"> Formation référent RPS</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="manager"> Formation manager/prévention RPS</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="stress"> Formation gestion du stress</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="conflits"> Formation gestion des conflits</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="harcelement"> Formation prévention du harcèlement</label>
+                                    <label class="form-check-label w-100"><input class="form-check-input me-2" type="checkbox" name="specialisations_rps" value="qvt"> Formation qualité de vie au travail (QVT)</label>
+                                </div>
+                            </div>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="formations" value="accueil_securite"> Accueil sécurité nouveaux embauchés
+                            </label>
                         </div>
                     </div>
-
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label">Spécialisations</label>
+                        <div class="list-group">
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="specialisations" value="B1"> B1
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="specialisations" value="B0"> B0
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="specialisations" value="PSC1"> PSC1
+                            </label>
+                            <label class="form-check-label w-100">
+                                <input class="form-check-input me-2" type="checkbox" name="specialisations" value="PSE1"> PSE1
+                            </label>
+                        </div>
+                    </div>
                     <div id="formErrors" class="alert alert-danger d-none"></div>
-                    
                     <button type="submit" class="btn btn-success btn-sm">
-                        <i class="bi bi-plus-circle"></i> Ajouter au catalogue
+                        <i class="bi bi-plus-circle"></i> Enregistrer le catalogue
                     </button>
                 </form>
             </div>
         </div>
     </div>
+</div>
+
+<!---- Modal Ajout Spécialisation -->
+
+<div class="modal fade" id="addSpecialisationModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addSpecialisationForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Ajouter une spécialisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="specialisationTypeId" name="type_formation">
+          <div class="mb-3">
+            <label for="specCode" class="form-label">Code</label>
+            <input type="text" id="specCode" name="code" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="specNom" class="form-label">Nom</label>
+            <input type="text" id="specNom" name="nom" class="form-control" required>
+          </div>
+          <!-- Ajoutez d'autres champs si besoin -->
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -73,6 +311,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const catalogueForm = document.getElementById('catalogueForm');
     const formationsList = document.getElementById('formationsList');
     const formErrors = document.getElementById('formErrors');
+    const addSpecialisationBtn = document.getElementById('addSpecialisationBtn');
+    const addSpecialisationModal = new bootstrap.Modal(document.getElementById('addSpecialisationModal'));
+    const addSpecialisationForm = document.getElementById('addSpecialisationForm');
+    const specialisationTypeId = document.getElementById('specialisationTypeId');
 
     // Données pour les spécialisations par type de formation
     let typeFormationData = {};
@@ -100,11 +342,11 @@ fetch(URLS.typeFormations)
         }
     });
 
-   // Afficher spécialisations selon type sélectionné
+
+// Afficher spécialisations selon type sélectionné
 typeFormationSelect.addEventListener('change', function() {
     const typeId = this.value;
-    
-    // NOUVEAU : Si "Autre", afficher champ texte
+    //  Si "Autre", afficher champ texte
     const customDiv = document.getElementById('customFormationDiv');
     const customInput = document.getElementById('customFormationNom');
     
@@ -127,10 +369,12 @@ typeFormationSelect.addEventListener('change', function() {
 
     const specs = typeFormationData[typeId] || [];
     specialisationsContainer.innerHTML = '';
-    
-    if (specs.length === 0) {
-        specialisationsContainer.innerHTML = '<p class="text-muted small">Aucune spécialisation disponible</p>';
-        return;
+
+    if (typeId && typeId !== 'autre') {
+        addSpecialisationBtn.classList.remove('d-none');
+        specialisationTypeId.value = typeId;
+    } else {
+        addSpecialisationBtn.classList.add('d-none');
     }
 
     specs.forEach(spec => {
@@ -229,6 +473,46 @@ typeFormationSelect.addEventListener('change', function() {
         formErrors.innerHTML = errorHtml;
         formErrors.classList.remove('d-none');
     }
+
+
+    // Ouvrir la modale d’ajout
+    addSpecialisationBtn.addEventListener('click', function() {
+        addSpecialisationModal.show();
+    });
+
+    // Soumettre le formulaire d’ajout de spécialisation
+    addSpecialisationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/api/specialisations/add/', {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                addSpecialisationModal.hide();
+                // Rechargez la liste des spécialisations pour le type sélectionné
+                // 1. Recharge les types de formation (et spécialisations)
+                fetch(URLS.typeFormations)
+                    .then(r => r.json())
+                    .then(newData => {
+                        // Met à jour le cache JS
+                        typeFormationData = {};
+                        newData.types.forEach(type => {
+                            typeFormationData[type.id] = type.spécialisations;
+                        });
+                        // 2. Rafraîchit la liste des spécialisations affichée
+                        typeFormationSelect.dispatchEvent(new Event('change'));
+                    });
+            } else {
+                // Affichez les erreurs
+                alert('Erreur : ' + JSON.stringify(data.errors));
+            }
+        });
+    });
+
 
     // Charger au démarrage
     loadCatalogueFormations();

@@ -4,10 +4,65 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Row, Column, Submit, HTML, Div
 from .models import (
     Stagiaire, Formation, ValidationCompetence, Titre, 
-    AvisFormation, Entreprise, Habilitation, RenouvellementHabilitation,
+    AvisFormation, Entreprise, RenouvellementHabilitation,
     DemandeStagiaire, SessionFormation, InvitationEntreprise,
     TypeFormation, Specialisation
 )
+
+
+# Formulaire pour Type de Formation
+class TypeFormationForm(forms.ModelForm):
+    class Meta:
+        model = TypeFormation
+        fields = ['code', 'nom', 'titre_officiel', 'description', 'duree_validite_mois']
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'nom': forms.TextInput(attrs={'class': 'form-control'}),
+            'titre_officiel': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'duree_validite_mois': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            Fieldset('Type de formation',
+                'code', 'nom', 'titre_officiel', 'description', 'duree_validite_mois',
+            ),
+            Submit('submit', 'Enregistrer', css_class='btn btn-primary mt-3')
+        )
+
+
+# Formulaire pour Spécialisation
+class SpecialisationForm(forms.ModelForm):
+    class Meta:
+        model = Specialisation
+        fields = ['type_formation', 'code', 'nom', 'description', 'duree_validite_mois', 'savoirs', 'savoirs_faire', 'actif']
+        widgets = {
+            'type_formation': forms.Select(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'nom': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'duree_validite_mois': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'savoirs': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'savoirs_faire': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'actif': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            Fieldset('Spécialisation',
+                'type_formation', 'code', 'nom', 'description', 'duree_validite_mois', 'savoirs', 'savoirs_faire', 'actif',
+            ),
+            Submit('submit', 'Enregistrer', css_class='btn btn-primary mt-3')
+        )
 
 
 class EntrepriseForm(forms.ModelForm):
@@ -39,6 +94,7 @@ class EntrepriseForm(forms.ModelForm):
             ),
             Submit('submit', 'Enregistrer', css_class='btn btn-primary mt-3')
         )
+        
 
 
 class InvitationEntrepriseForm(forms.ModelForm):
@@ -104,12 +160,19 @@ class StagiaireForm(forms.ModelForm):
 
 
 class FormationForm(forms.ModelForm):
+
+    specialisations = forms.ModelMultipleChoiceField(
+        queryset=Specialisation.objects.all(),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label="Spécialisations"
+    )
+
     """Form pour créer/modifier une formation"""
     class Meta:
         model = Formation
-        fields = ['habilitation', 'organisme_formation', 'date_debut', 'date_fin_prevue', 'numero_session', 'notes']
+        fields = ['organisme_formation', 'date_debut', 'date_fin_prevue', 'numero_session', 'notes']
         widgets = {
-            'habilitation': forms.Select(attrs={'class': 'form-control'}),
             'organisme_formation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de l\'OF'}),
             'date_debut': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'date_fin_prevue': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -123,7 +186,6 @@ class FormationForm(forms.ModelForm):
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
             Fieldset('Détails de formation',
-                'habilitation',
                 'organisme_formation',
             ),
             Fieldset('Calendrier',
@@ -140,10 +202,8 @@ class ValidationCompetenceForm(forms.ModelForm):
     """Form pour valider les compétences"""
     class Meta:
         model = ValidationCompetence
-        fields = ['type_competence', 'titre_competence', 'description', 'valide', 'commentaires_validateur']
+        fields = ['description', 'valide', 'commentaires_validateur']
         widgets = {
-            'type_competence': forms.Select(attrs={'class': 'form-control'}),
-            'titre_competence': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'valide': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'commentaires_validateur': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -155,8 +215,6 @@ class ValidationCompetenceForm(forms.ModelForm):
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
             Fieldset('Compétence',
-                'type_competence',
-                'titre_competence',
                 'description',
             ),
             Fieldset('Validation',
@@ -267,11 +325,7 @@ class FiltreFormationForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    habilitation = forms.ModelChoiceField(
-        queryset=Habilitation.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
+    # Champ habilitation supprimé
     statut = forms.ChoiceField(
         choices=[('', 'Tous les statuts')] + Formation._meta.get_field('statut').choices,
         required=False,
@@ -488,3 +542,19 @@ class FormateurCompetencesForm(forms.Form):
         super().__init__(*args, **kwargs)
         if specialisations_qs:
             self.fields['spécialisations'].queryset = specialisations_qs
+
+
+class AjouterStagiairesForm(forms.Form):
+    stagiaires = forms.ModelMultipleChoiceField(
+        queryset=Stagiaire.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label="Stagiaires à inscrire"
+    )
+
+class EmailForm(forms.Form):
+    destinataires = forms.CharField(help_text="Entrez les adresses e-mail séparées par des virgules.", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    sujet = forms.CharField(label="Sujet", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    message = forms.CharField(label="Message", widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 18, 'style': 'font-size:1.2em;'}))
+    """avec rows on augmente la taille de la zone de texte
+    et avec font-size:1.2em on augmente la taille de la police dans textarea"""

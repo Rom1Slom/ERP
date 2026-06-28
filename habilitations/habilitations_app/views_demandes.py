@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import DemandeFormation, Stagiaire, Habilitation, SessionFormation, Formation
+from .models import DemandeFormation, Stagiaire, SessionFormation, Formation
 from .middleware import get_accessible_stagiaires, get_accessible_demandes_formation
 from .decorators import role_required
 
@@ -37,22 +37,18 @@ def creer_demande_formation(request):
         return redirect('dashboard')
     
     if request.method == 'POST':
-        habilitation_id = request.POST.get('habilitation')
         stagiaires_ids = request.POST.getlist('stagiaires')
         date_souhaitee = request.POST.get('date_souhaitee')
         type_formation = request.POST.get('type_formation', 'intra')
         lieu_formation = request.POST.get('lieu_formation', 'sur_site')
         commentaire = request.POST.get('commentaire')
-        
-        if not habilitation_id or not stagiaires_ids:
-            messages.error(request, "Veuillez sélectionner une habilitation et au moins un stagiaire.")
+        if not stagiaires_ids:
+            messages.error(request, "Veuillez sélectionner au moins un stagiaire.")
         else:
-            # Créer la demande
             demande = DemandeFormation.objects.create(
                 entreprise_demandeuse=profil.entreprise,
                 organisme_formation=organisme_formation,
                 tenant=tenant,
-                habilitation_id=habilitation_id,
                 type_formation=type_formation,
                 lieu_formation=lieu_formation,
                 date_souhaitee=date_souhaitee if date_souhaitee else None,
@@ -63,22 +59,15 @@ def creer_demande_formation(request):
                 consentement_ip=request.META.get('REMOTE_ADDR'),
                 consentement_user_agent=request.META.get('HTTP_USER_AGENT', '')
             )
-            
-            # Ajouter les stagiaires
             demande.stagiaires.set(stagiaires_ids)
-            
             messages.success(
                 request, 
                 f"Demande de formation créée avec succès pour {demande.nombre_stagiaires} stagiaire(s). "
                 f"L'organisme de formation sera notifié."
             )
             return redirect('liste_demandes_formation')
-    
-    habilitations = Habilitation.objects.filter(actif=True)
-    
     context = {
         'stagiaires': stagiaires,
-        'habilitations': habilitations,
         'organisme_formation': organisme_formation,
         'type_formation_choices': DemandeFormation.TYPE_FORMATION_CHOICES,
         'lieu_formation_choices': DemandeFormation.LIEU_FORMATION_CHOICES,
@@ -96,13 +85,9 @@ def liste_demandes_formation(request):
     if statut:
         demandes = demandes.filter(statut=statut)
     
-    habilitation_id = request.GET.get('habilitation')
-    if habilitation_id:
-        demandes = demandes.filter(habilitation_id=habilitation_id)
     
     context = {
         'demandes': demandes,
-        'habilitations': Habilitation.objects.filter(actif=True),
         'est_admin_of': request.is_admin_of,
         'est_responsable_pme': request.is_responsable_pme,
     }
@@ -206,7 +191,6 @@ def creer_session_from_demande(request, demande_pk):
     if request.method == 'POST':
         # Créer la session
         session = SessionFormation.objects.create(
-            habilitation=demande.habilitation,
             numero_session=request.POST.get('numero_session'),
             organisme_formation=profil.entreprise.nom,
             tenant=getattr(profil, 'tenant', None),
@@ -221,7 +205,6 @@ def creer_session_from_demande(request, demande_pk):
         for stagiaire in demande.stagiaires.all():
             Formation.objects.create(
                 stagiaire=stagiaire,
-                habilitation=demande.habilitation,
                 session=session,
                 date_debut=session.date_debut,
                 date_fin_prevue=session.date_fin,

@@ -31,6 +31,7 @@ class TenantFormationForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         type_formation = cleaned_data.get('type_formation')
+        specialisations = cleaned_data.get('spécialisations')
         
         if not type_formation:
             raise forms.ValidationError("Veuillez sélectionner un type de formation")
@@ -44,4 +45,8 @@ class TenantFormationForm(forms.Form):
                 f"La formation '{type_formation.nom}' existe déjà dans votre catalogue"
             )
         
+        # N'imposer la sélection que s'il existe des spécialisations pour ce type
+        if Specialisation.objects.filter(type_formation=type_formation).exists() and not specialisations:
+             self.add_error('spécialisations', "Sélectionnez au moins une spécialisation.")
+
         return cleaned_data

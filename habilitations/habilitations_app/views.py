@@ -4,29 +4,38 @@ from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Count
 from datetime import timedelta
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 import csv
 import io
+import qrcode
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from .services import formateurs_of
 from .models import (
     Entreprise, Stagiaire, Formation, ValidationCompetence, 
-    Titre, AvisFormation, RenouvellementHabilitation, Habilitation,
-    DemandeStagiaire, SessionFormation, ProfilUtilisateur
+    Titre, AvisFormation, RenouvellementHabilitation,
+    DemandeStagiaire, SessionFormation, ProfilUtilisateur, TypeFormation,
+    Specialisation, DemandeFormation,
 )
 from .forms import (
     StagiaireForm, FormationForm, ValidationCompetenceForm, 
     AvisFormationForm, TitreForm, RenouvellementForm,
-    DemandeStagiaireForm, SessionFormationForm, AssignerDemandeForm
+    DemandeStagiaireForm, SessionFormationForm, AssignerDemandeForm, TypeFormationForm,
+    SpecialisationForm, AjouterStagiairesForm, forms, EmailForm
 )
+from .views_inscrire import inscrire_stagiaire_session
 
 
 class CustomLoginView(LoginView):
     """Vue de connexion personnalisée avec redirection selon le rôle B2B2C"""
-    template_name = 'habilitations_app/login.html'
+    template_name = 'registration/login.html'
     
     def get_success_url(self):
         """Rediriger selon le rôle de l'utilisateur"""
@@ -81,7 +90,7 @@ def home(request):
         profil = ProfilUtilisateur.objects.create(user=request.user)
         messages.info(request, "Un profil utilisateur a été créé. Veuillez configurer votre rôle et entreprise dans l'administration.")
     
-    return render(request, 'habilitations_app/home.html')
+    return render(request, 'home.html')
 
 
 @login_required
@@ -127,7 +136,7 @@ def dashboard_client(request):
         'formations_recentes': formations_completees_recentes,
     }
     
-    return render(request, 'habilitations_app/dashboard_client.html', context)
+    return render(request, 'dashboard_client.html', context)
 
 
 @login_required
@@ -167,13 +176,42 @@ def dashboard_of(request):
         'sessions_recentes': sessions_recentes,
     }
     
-    return render(request, 'habilitations_app/dashboard_of.html', context)
+    return render(request, 'dashboard_of.html', context)
 
+
+def creer_type_formation(request):
+    if request.method == 'POST':
+        form = TypeFormationForm(request.POST)
+        if form.is_valid():
+            type_formation = form.save()
+            messages.success(request, "Type de formation créé avec succès.")
+            return redirect('ajouter_specialisations', type_formation_id=type_formation.id)
+    else:
+        form = TypeFormationForm()
+    return render(request, 'type_formation_form.html', {'form': form})
+
+def ajouter_specialisations(request, type_formation_id):
+    type_formation = TypeFormation.objects.get(id=type_formation_id)
+    specialisations = type_formation.specialisations.all()
+    if request.method == 'POST':
+        form = SpecialisationForm(request.POST)
+        if form.is_valid():
+            specialisation = form.save(commit=False)
+            specialisation.type_formation = type_formation
+            specialisation.save()
+            return redirect('ajouter_specialisations', type_formation_id=type_formation.id)
+    else:
+        form = SpecialisationForm()
+    return render(request, 'ajouter_specialisations.html', {
+        'type_formation': type_formation,
+        'specialisations': specialisations,
+        'form': form,
+    })
 
 class StagiaireListView(LoginRequiredMixin, ListView):
     """Liste des stagiaires"""
     model = Stagiaire
-    template_name = 'habilitations_app/stagiaire_list.html'
+    template_name = 'stagiaire_list.html'
     context_object_name = 'stagiaires'
     paginate_by = 20
     
@@ -195,7 +233,7 @@ class StagiaireListView(LoginRequiredMixin, ListView):
 class StagiaireDetailView(LoginRequiredMixin, DetailView):
     """Détail d'un stagiaire"""
     model = Stagiaire
-    template_name = 'habilitations_app/stagiaire_detail.html'
+    template_name = 'stagiaire_detail.html'
     context_object_name = 'stagiaire'
     
     def get_object(self):
@@ -222,8 +260,20 @@ class StagiaireCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         profil = self.request.user.profil
         form.instance.entreprise = profil.entreprise
-        form.instance.organisme_formation = getattr(profil.entreprise, 'tenant_of', None) or form.instance.organisme_formation
+        # Correction : organisme_formation doit être une Entreprise (OF)
+        if hasattr(profil.entreprise, 'type_entreprise') and profil.entreprise.type_entreprise == 'of':
+            form.instance.organisme_formation = profil.entreprise
+        elif hasattr(profil.entreprise, 'tenant_of') and isinstance(profil.entreprise.tenant_of, Entreprise):
+            form.instance.organisme_formation = profil.entreprise.tenant_of
+        # Sinon, on laisse la valeur du formulaire
         form.instance.tenant = getattr(profil, 'tenant', None) or getattr(profil.entreprise, 'tenant', None)
+            # Sécurité : garantir que organisme_formation est toujours renseigné
+        if not form.instance.organisme_formation:
+                # On assigne l'OF de l'entreprise du client
+                form.instance.organisme_formation = getattr(profil.entreprise, 'tenant_of', None) or profil.entreprise
+                if not form.instance.organisme_formation:
+                    messages.error(self.request, "Impossible de déterminer l'organisme de formation associé. Veuillez contacter l'administrateur.")
+                    return self.form_invalid(form)
         return super().form_valid(form)
     
     def get_success_url(self):
@@ -252,7 +302,7 @@ class StagiaireUpdateView(LoginRequiredMixin, UpdateView):
 class FormationListView(LoginRequiredMixin, ListView):
     """Liste des formations"""
     model = Formation
-    template_name = 'habilitations_app/formation_list.html'
+    template_name = 'formation_list.html'
     context_object_name = 'formations'
     paginate_by = 20
     
@@ -278,7 +328,7 @@ class FormationListView(LoginRequiredMixin, ListView):
 class FormationDetailView(LoginRequiredMixin, DetailView):
     """Détail d'une formation"""
     model = Formation
-    template_name = 'habilitations_app/formation_detail.html'
+    template_name = 'formation_detail.html'
     context_object_name = 'formation'
     
     def get_object(self):
@@ -320,7 +370,7 @@ class FormationCreateView(LoginRequiredMixin, CreateView):
     """Créer une formation"""
     model = Formation
     form_class = FormationForm
-    template_name = 'habilitations_app/formation_form.html'
+    template_name = 'formation_form.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -347,7 +397,7 @@ class FormationUpdateView(LoginRequiredMixin, UpdateView):
     """Modifier une formation"""
     model = Formation
     form_class = FormationForm
-    template_name = 'habilitations_app/formation_form.html'
+    template_name = 'formation_form.html'
     
     def get_object(self):
         return get_object_or_404(
@@ -385,26 +435,7 @@ def valider_competences(request, formation_id):
         )
     
     # Créer les validations de compétences si elles n'existent pas
-    habilitation = formation.habilitation
-    savoirs = [s.strip() for s in habilitation.savoirs.split('\n') if s.strip()]
-    savoirs_faire = [sf.strip() for sf in habilitation.savoirs_faire.split('\n') if sf.strip()]
-    
-    validations = []
-    for savoir in savoirs:
-        val, created = ValidationCompetence.objects.get_or_create(
-            formation=formation,
-            titre_competence=savoir,
-            defaults={'type_competence': 'savoir', 'tenant': formation.tenant}
-        )
-        validations.append(val)
-    
-    for sf in savoirs_faire:
-        val, created = ValidationCompetence.objects.get_or_create(
-            formation=formation,
-            titre_competence=sf,
-            defaults={'type_competence': 'savoir_faire', 'tenant': formation.tenant}
-        )
-        validations.append(val)
+        # Création automatique des validations de compétences désactivée
     
     if request.method == 'POST':
         for validation_id in request.POST.getlist('validations'):
@@ -428,7 +459,7 @@ def valider_competences(request, formation_id):
         'validations': ValidationCompetence.objects.filter(formation=formation),
     }
     
-    return render(request, 'habilitations_app/valider_competences.html', context)
+    return render(request, 'valider_competences.html', context)
 
 
 @login_required
@@ -477,12 +508,12 @@ def creer_avis_formation(request, formation_id):
         'avis': avis,
     }
     
-    return render(request, 'habilitations_app/avis_form.html', context)
+    return render(request, 'avis_form.html', context)
 
 
 @login_required
 def delivrer_titre(request, formation_id):
-    """Délivrer un titre d'habilitation"""
+    """Délivrer un titre"""
     profil = request.user.profil
     if profil.est_formateur:
         formation = get_object_or_404(
@@ -516,11 +547,11 @@ def delivrer_titre(request, formation_id):
             titre_obj = form.save(commit=False)
             titre_obj.formation = formation
             titre_obj.stagiaire = formation.stagiaire
-            titre_obj.habilitation = formation.habilitation
+            # titre_obj.habilitation supprimé
             titre_obj.delivre_par = request.user
             titre_obj.tenant = formation.tenant
             titre_obj.save()
-            messages.success(request, 'Titre d\'habilitation délivré.')
+            messages.success(request, 'Titre délivré.')
             return redirect('formation_detail', pk=formation_id)
     else:
         form = TitreForm(instance=titre)
@@ -531,13 +562,13 @@ def delivrer_titre(request, formation_id):
         'titre': titre,
     }
     
-    return render(request, 'habilitations_app/titre_form.html', context)
+    return render(request, 'titre_form.html', context)
 
 
 class TitreListView(LoginRequiredMixin, ListView):
-    """Liste des titres d'habilitation"""
+    """Liste des titres"""
     model = Titre
-    template_name = 'habilitations_app/titre_list.html'
+    template_name = 'titre_list.html'
     context_object_name = 'titres'
     paginate_by = 20
     
@@ -560,7 +591,7 @@ class TitreListView(LoginRequiredMixin, ListView):
 class RenouvellementListView(LoginRequiredMixin, ListView):
     """Liste des renouvellements"""
     model = RenouvellementHabilitation
-    template_name = 'habilitations_app/renouvellement_list.html'
+    template_name = 'renouvellement_list.html'
     context_object_name = 'renouvellements'
     paginate_by = 20
     
@@ -606,7 +637,7 @@ def planifier_renouvellement(request, titre_id):
         'titre': titre,
     }
     
-    return render(request, 'habilitations_app/renouvellement_form.html', context)
+    return render(request, 'renouvellement_form.html', context)
 
 
 # === GESTION DES DEMANDES DE STAGIAIRES (ENTREPRISE CLIENTE) ===
@@ -643,14 +674,14 @@ def soumettre_demande_stagiaire(request):
                 demande.tenant = demande.tenant or getattr(stagiaire, 'tenant', None)
             
             demande.save()
-            # Sauvegarder les habilitations (ManyToMany)
+            # Sauvegarder les formations (ManyToMany)
             form.save_m2m()
             
             # Vérifier si c'est un renouvellement (existence de titres précédents)
             if demande.stagiaire_existant:
                 titres_precedents = Titre.objects.filter(
                     stagiaire=demande.stagiaire_existant,
-                    habilitation__in=form.cleaned_data['habilitations_demandees']
+                    # ex-habilitation supprimé
                 )
                 if titres_precedents.exists():
                     demande.est_renouvellement = True
@@ -666,7 +697,7 @@ def soumettre_demande_stagiaire(request):
     context = {
         'form': form,
     }
-    return render(request, 'habilitations_app/demande_stagiaire_form.html', context)
+    return render(request, 'demande_stagiaire_form.html', context)
 
 
 @login_required
@@ -683,7 +714,7 @@ def liste_demandes_stagiaires(request):
     context = {
         'demandes': demandes,
     }
-    return render(request, 'habilitations_app/demande_stagiaire_list.html', context)
+    return render(request, 'demande_stagiaire_list.html', context)
 
 
 # === GESTION DES SESSIONS DE FORMATION (SECRÉTAIRE KOMPETANS) ===
@@ -732,13 +763,10 @@ def liste_sessions_formation(request):
     if statut:
         sessions = sessions.filter(statut=statut)
     
-    habilitation_id = request.GET.get('habilitation')
-    if habilitation_id:
-        sessions = sessions.filter(habilitation_id=habilitation_id)
+    # Filtre supprimé
     
     context = {
         'sessions': sessions,
-        'habilitations': Habilitation.objects.all(),
     }
     return render(request, 'habilitations_app/session_formation_list.html', context)
 
@@ -791,12 +819,10 @@ def detail_session_formation(request, pk):
         messages.error(request, "Session hors de votre tenant.")
         return redirect('liste_sessions_formation')
     
-    # Demandes en attente pour cette habilitation
+    # Demandes en attente
     demandes_disponibles = DemandeStagiaire.objects.filter(
         statut='en_attente'
     )
-    if hasattr(session, 'habilitation'):
-        demandes_disponibles = demandes_disponibles.filter(habilitations_demandees=session.habilitation)
     if session.tenant:
         demandes_disponibles = demandes_disponibles.filter(tenant=session.tenant)
     
@@ -807,7 +833,7 @@ def detail_session_formation(request, pk):
     formations_session = session.formations_session.all()
     
     if request.method == 'POST' and 'assigner_demandes' in request.POST:
-        form = AssignerDemandeForm(request.POST, habilitation=session.habilitation)
+        form = AssignerDemandeForm(request.POST)
         if form.is_valid():
             demandes_selectionnees = form.cleaned_data['demandes']
             for demande in demandes_selectionnees:
@@ -826,11 +852,9 @@ def detail_session_formation(request, pk):
                             'date_embauche': demande.date_embauche,
                         }
                     )
-                    
                     # Créer la formation
                     formation, created = Formation.objects.get_or_create(
                         stagiaire=stagiaire,
-                        habilitation=session.habilitation,
                         defaults={
                             'session': session,
                             'date_debut': session.date_debut,
@@ -840,7 +864,6 @@ def detail_session_formation(request, pk):
                             'tenant': session.tenant or getattr(profil, 'tenant', None),
                         }
                     )
-                    
                     # Mettre à jour la demande
                     demande.statut = 'integree'
                     demande.session_assignee = session
@@ -851,11 +874,10 @@ def detail_session_formation(request, pk):
                 else:
                     messages.warning(request, f"Session complète. Impossible d'ajouter {demande.nom_complet}.")
                     break
-            
             messages.success(request, f"{len(demandes_selectionnees)} stagiaire(s) intégré(s) à la session.")
             return redirect('detail_session_formation', pk=pk)
     else:
-        form = AssignerDemandeForm(habilitation=session.habilitation)
+        form = AssignerDemandeForm()
     
     context = {
         'session': session,
@@ -888,16 +910,13 @@ def liste_demandes_admin(request):
     if entreprise_id:
         demandes = demandes.filter(entreprise_id=entreprise_id)
     
-    habilitation_id = request.GET.get('habilitation')
-    if habilitation_id:
-        demandes = demandes.filter(habilitation_demandee_id=habilitation_id)
+    # Filtre supprimé
     
     context = {
         'demandes': demandes,
         'entreprises': Entreprise.objects.all(),
-        'habilitations': Habilitation.objects.all(),
     }
-    return render(request, 'habilitations_app/demande_admin_list.html', context)
+    return render(request, 'demande_admin_list.html', context)
 
 
 # === API / ENDPOINTS UTILITAIRES ===
@@ -951,23 +970,7 @@ def api_import_csv(request):
                 if created:
                     created_stagiaires += 1
 
-                hab_code = row.get('habilitation_code')
-                if hab_code:
-                    try:
-                        hab = Habilitation.objects.get(code=hab_code)
-                        demande = DemandeFormation.objects.create(
-                            entreprise_demandeuse=entreprise,
-                            organisme_formation=profil.entreprise,
-                            tenant=tenant,
-                            habilitation=hab,
-                            statut='en_attente',
-                            demandeur=request.user,
-                            consentement_at=timezone.now(),
-                        )
-                        demande.stagiaires.add(stagiaire)
-                        created_demandes += 1
-                    except Habilitation.DoesNotExist:
-                        errors.append(f"Ligne {idx}: habilitation {hab_code} inconnue")
+                # Import ignoré
         except Exception as exc:
             errors.append(f"Ligne {idx}: {exc}")
 
@@ -1060,9 +1063,9 @@ def api_pdf_titre(request, titre_id):
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     p.setTitle(f"Titre {titre.numero_titre}")
-    p.drawString(50, 800, f"Titre d'habilitation {titre.numero_titre}")
+    p.drawString(50, 800, f"Titre {titre.numero_titre}")
     p.drawString(50, 780, f"Stagiaire: {titre.stagiaire.nom_complet}")
-    p.drawString(50, 760, f"Habilitation: {titre.habilitation.code} - {titre.habilitation.nom}")
+    p.drawString(50, 760, f"Formation: {getattr(titre, 'formation', None)}")
     p.drawString(50, 740, f"Délivré le: {titre.date_delivrance}")
     p.drawString(50, 720, f"Expire le: {titre.date_expiration}")
     p.showPage()
@@ -1073,3 +1076,113 @@ def api_pdf_titre(request, titre_id):
     response['Content-Disposition'] = f"attachment; filename=titre-{titre.numero_titre}.pdf"
     return response
 
+def ajouter_stagiaires_session(request, session_id):
+    session = get_object_or_404(SessionFormation, id=session_id)
+    sort = request.GET.get('sort', 'nom')
+    if request.method == 'POST':
+        form = AjouterStagiairesForm(request.POST)
+        if form.is_valid():
+            for stagiaire in form.cleaned_data['stagiaires']:
+                Formation.objects.get_or_create(
+                    stagiaire=stagiaire,
+                    session=session,
+                    defaults={'date_debut': session.date_debut, 'organisme_formation': session.tenant.nom}
+                )
+            return redirect('detail_session_formation', pk=session.id)
+        stagiaires = form.fields['stagiaires'].queryset.order_by(sort, 'nom', 'prenom')
+    else:
+        inscrits = Stagiaire.objects.filter(formations__session=session)
+        form = AjouterStagiairesForm()
+        queryset = Stagiaire.objects.exclude(id__in=inscrits).order_by(sort, 'nom', 'prenom')
+        form.fields['stagiaires'].queryset = queryset
+        stagiaires = queryset
+    return render(request, 'habilitations_app/ajouter_stagiaires_session.html', {
+        'form': form,
+        'session': session,
+        'stagiaires': stagiaires,
+    })
+
+
+@login_required
+def envoyer_email_formateur(request, session_id):
+    session = get_object_or_404(SessionFormation, id=session_id)
+    formateurs = [f.user.email for f in session.formateurs.all() if f.user and f.user.email]
+    noms_formateurs = ", ".join([f"{f.user.first_name} {f.user.last_name}" for f in session.formateurs.all()])
+    lien_pdf = request.build_absolute_uri(reverse('pdf_stagiaires_qr', args=[session.id]))
+    initial = {
+        'destinataires': ', '.join(formateurs),
+        'sujet': f"Informations sur la session de formation {session.numero_session}",
+        'message': render_to_string('habilitations_app/email_session_info.html', {
+            'session': session,
+            'stagiaires_count': session.formations_session.count(),
+            'noms_formateurs': noms_formateurs,
+            'lien_pdf': lien_pdf
+             }),
+    }
+    if request.method == 'POST':
+        form = EmailForm(request.POST)
+        if form.is_valid():
+                  message_html = form.cleaned_data['message']
+                  message_text = strip_tags(message_html) # Convertir en texte brut
+                  send_mail(
+        
+                        form.cleaned_data['sujet'],
+                        message_text,  # version texte brut
+                        'noreply@oxalis.fr',
+                        [email.strip() for email in form.cleaned_data['destinataires'].split(',')],
+                        fail_silently=False,
+                        html_message=message_html, #version HTML avec liens cliquables
+                    )
+        messages.success(request, "E-mail envoyé avec succès.")
+        return redirect('detail_session_formation', pk=session.id)
+    else:
+        form = EmailForm(initial=initial)
+    return render(request, 'habilitations_app/envoyer_email_formateur.html', {
+        'form': form,
+        'session': session,
+    })
+    
+
+def pdf_stagiaires_qr(request, session_id):
+    session = SessionFormation.objects.get(pk=session_id)
+    stagiaires = session.formations_session.all()
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y = height - 50
+
+    for formation in stagiaires:
+        stagiaire = formation.stagiaire
+        # Générer les QR codes
+        qr_emargement = qrcode.make(f"https://exemple.com/emargement/{stagiaire.id}")
+        qr_prepositionnement = qrcode.make(f"https://exemple.com/prepositionnement/{stagiaire.id}")
+        qr_evaluation = qrcode.make(f"https://exemple.com/evaluation/{stagiaire.id}")
+
+        # Sauvegarder les QR codes en mémoire
+        qr_emargement_fp = io.BytesIO()
+        qr_prepositionnement_fp = io.BytesIO()
+        qr_evaluation_fp = io.BytesIO()
+        qr_emargement.save(qr_emargement_fp, format="PNG")
+        qr_prepositionnement.save(qr_prepositionnement_fp, format="PNG")
+        qr_evaluation.save(qr_evaluation_fp, format="PNG")
+        qr_emargement_fp.seek(0)
+        qr_prepositionnement_fp.seek(0)
+        qr_evaluation_fp.seek(0)
+
+        # Afficher le nom du stagiaire
+        p.drawString(50, y, f"{stagiaire.nom} {stagiaire.prenom}")
+
+        # Afficher les QR codes
+        p.drawInlineImage(qr_emargement_fp, 200, y-20, 50, 50)
+        p.drawInlineImage(qr_prepositionnement_fp, 270, y-20, 50, 50)
+        p.drawInlineImage(qr_evaluation_fp, 340, y-20, 50, 50)
+
+        y -= 70  # Décaler pour la prochaine ligne
+
+        if y < 100:
+            p.showPage()
+            y = height - 50
+
+    p.save()
+    buffer.seek(0)
+    return HttpResponse(buffer, content_type='application/pdf')

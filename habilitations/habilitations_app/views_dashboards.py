@@ -1,3 +1,41 @@
+
+
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def formateur_profil(request):
+    profil = request.user.profil
+    user = profil.user
+
+    if request.method == 'POST':
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.email = request.POST.get('email', user.email)
+        profil.telephone = request.POST.get('telephone', profil.telephone)
+        user.save()
+        profil.save()
+        messages.success(request, "Profil mis à jour.")
+        return redirect('formateur_profil')
+    return render(request, 'habilitations_app/formateur_profil.html', {
+        'profil': profil,
+    })
+
+@login_required
+def dashboard_formateur(request):
+    profil = request.user.profil
+    sessions = profil.sessions_formateur.all().order_by('-date_debut')
+    sessions_en_cours = sessions.filter(statut='en_cours').count()
+    # À adapter selon ta logique métier pour les formations à valider :
+    formations_a_valider = 0
+    return render(request, 'habilitations_app/dashboard_formateur.html', {
+        'profil': profil,
+        'sessions_assignees': sessions,
+        'sessions_en_cours': sessions_en_cours,
+        'formations_a_valider': formations_a_valider,
+    })
 """
 Tableaux de bord spécifiques par rôle B2B2C
 """
@@ -10,7 +48,7 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from .models import (
     Entreprise, Stagiaire, Formation, Titre, SessionFormation, 
-    DemandeFormation, Habilitation
+    DemandeFormation
 )
 from .decorators import role_required
 from .middleware import (

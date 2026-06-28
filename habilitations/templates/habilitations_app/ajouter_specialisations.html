@@ -1,0 +1,26 @@
+{% extends 'habilitations_app/base.html' %}
+{% load static %}
+
+{% block title %}Créer une demande de formation{% endblock %}
+
+{% block page_content %}
+
+<h2>Type de formation : {{ type_formation.nom }}</h2>
+    <ul>
+    {% for spec in specialisations %}
+        <li>{{ spec.nom }} ({{ spec.code }})</li>
+    {% empty %}
+        <li>Aucune spécialisation pour l’instant.</li>
+    {% endfor %}
+    </ul>
+
+<h3>Ajouter une spécialisation</h3>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form>
+
+<a href="{% url 'catalogue' %}" class="btn btn-secondary mt-3">Terminer</a>
+
+{% endblock %}  

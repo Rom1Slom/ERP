@@ -22,11 +22,12 @@ urlpatterns = [
     path('stagiaires/<int:pk>/', views.StagiaireDetailView.as_view(), name='stagiaire_detail'),
     path('stagiaires/nouveau/', views.StagiaireCreateView.as_view(), name='stagiaire_create'),
     path('stagiaires/<int:pk>/modifier/', views.StagiaireUpdateView.as_view(), name='stagiaire_update'),
-    
+    path('stagiaires/<int:stagiaire_id>/inscrire-session/', views.inscrire_stagiaire_session, name='inscrire_stagiaire_session'),
+    path('stagiaires/<int:stagiaire_id>/formation/nouveau/', views.FormationCreateView.as_view(), name='formation_create'),
     # Formations
     path('formations/', views.FormationListView.as_view(), name='formation_list'),
     path('formations/<int:pk>/', views.FormationDetailView.as_view(), name='formation_detail'),
-    path('stagiaires/<int:stagiaire_id>/formation/nouveau/', views.FormationCreateView.as_view(), name='formation_create'),
+    
     path('formations/<int:pk>/modifier/', views.FormationUpdateView.as_view(), name='formation_update'),
     path('formations/<int:formation_id>/competences/', views.valider_competences, name='valider_competences'),
     path('formations/<int:formation_id>/avis/', views.creer_avis_formation, name='creer_avis'),
@@ -55,6 +56,9 @@ urlpatterns = [
     path('sessions/creer/', views.creer_session_formation, name='creer_session_formation'),
     path('sessions/<int:pk>/', views.detail_session_formation, name='detail_session_formation'),
     path('sessions/<int:pk>/modifier/', views.modifier_session_formation, name='modifier_session_formation'),
+    path('sessions/<int:session_id>/ajouter-stagiaires/', views.ajouter_stagiaires_session, name='ajouter_stagiaires_session'),
+    path('sessions/<int:session_id>/envoyer-email-formateur/', views.envoyer_email_formateur, name='envoyer_email_formateur'),
+    path('sessions/<int:session_id>/pdf-stagiaires-qr/', views.pdf_stagiaires_qr, name='pdf_stagiaires_qr'),
     
     # Gestion des demandes (admin/secrétaire)
     path('admin/demandes/', views.liste_demandes_admin, name='liste_demandes_admin'),
@@ -64,12 +68,16 @@ urlpatterns = [
     path('dashboard/admin-of/formateurs/new/', views_formateurs.formateur_edit, name='formateur_create'),
     path('dashboard/admin-of/formateurs/<int:pk>/edit/', views_formateurs.formateur_edit, name='formateur_edit'),
     path('dashboard/admin-of/formateurs/<int:pk>/toggle/', views_formateurs.formateur_toggle, name='formateur_toggle'),
+    path('formateur/profil/', views_dashboards.formateur_profil, name='formateur_profil'),
 
     # Catalogue des formations (admin_of, secretariat)
     path('api/catalogue-formations/', views_catalogue.catalogue_formations_list, name='catalogue_formations_list'),
     path('api/catalogue-formations/add/', views_catalogue.catalogue_formations_add, name='catalogue_formations_add'),
     path('api/catalogue-formations/<int:pk>/delete/', views_catalogue.catalogue_formations_delete, name='catalogue_formations_delete'),
     path('api/catalogue-formations/<int:pk>/toggle/', views_catalogue.catalogue_formations_toggle, name='catalogue_formations_toggle'),
+    path('api/specialisations/add/', views_api.api_add_specialisation, name='api_add_specialisation'),
+    path('type-formation/creer/', views.creer_type_formation, name='creer_type_formation'),
+    path('type-formation/<int:type_formation_id>/specialisations/', views.ajouter_specialisations, name='ajouter_specialisations'),
 
     # Clients (Admin OF)
     path('of/clients/', views_invitations.liste_invitations, name='liste_invitations'),

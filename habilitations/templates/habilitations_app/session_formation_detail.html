@@ -145,6 +145,20 @@
         <a href="{% url 'modifier_session_formation' session.pk %}" class="btn btn-warning">
             <i class="bi bi-pencil"></i> Modifier
         </a>
+
+        <a href="{% url 'stagiaire_list' %}" class="btn btn-success mb-3">
+               <i class="bi bi-person-plus"></i> Inscrire des stagiaires
+        </a>
+        
+        <a href="{% url 'envoyer_email_formateur' session.id %}" class="btn btn-info">
+            <i class="bi bi-envelope"></i> Envoyer un email aux formateurs
+        </a>
+
+        <!-- Envoi via logiciel de messagerie (mailto) -->
+        <a href="mailto:{{ session.formateur.email }}?subject={{ sujet|urlencode }}&body={{ message|urlencode }}" class="btn btn-secondary">
+        <i class="bi bi-envelope-open"></i> Ouvrir dans ma messagerie
+        </a>
+
         <a href="{% url 'liste_sessions_formation' %}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Retour aux sessions
         </a>

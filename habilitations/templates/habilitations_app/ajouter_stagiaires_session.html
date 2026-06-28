@@ -1,0 +1,33 @@
+{% extends "habilitations_app/base.html" %}
+{% block content %}
+  <h2>Ajouter des stagiaires à la session {{ session }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+
+<h3 class="mt-4">Stagiaires disponibles</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th><a href="?sort=nom">Nom</a></th>
+            <th><a href="?sort=prenom">Prénom</a></th>
+            <th><a href="?sort=entreprise">Entreprise</a></th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stagiaire in stagiaires %}
+        <tr>
+            <td>{{ stagiaire.nom }}</td>
+            <td>{{ stagiaire.prenom }}</td>
+            <td>{{ stagiaire.entreprise.nom }}</td>
+            <td>{{ stagiaire.email }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Aucun stagiaire disponible.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import (
-    Entreprise, Habilitation, Stagiaire, Formation, 
+    Entreprise, Stagiaire, Formation, 
     ValidationCompetence, Titre, AvisFormation, 
     RenouvellementHabilitation, Journal,
     DemandeStagiaire, SessionFormation, ProfilUtilisateur,
@@ -22,18 +22,6 @@ class EntrepriseAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Habilitation)
-class HabilitationAdmin(admin.ModelAdmin):
-    list_display = ['code', 'nom', 'categorie', 'niveau', 'duree_validite_mois', 'actif']
-    list_filter = ['categorie', 'actif']
-    search_fields = ['code', 'nom']
-    fieldsets = (
-        ('Identification', {'fields': ('code', 'nom', 'description')}),
-        ('Classification', {'fields': ('categorie', 'niveau')}),
-        ('Validité', {'fields': ('duree_validite_mois',)}),
-        ('Compétences', {'fields': ('savoirs', 'savoirs_faire')}),
-        ('Statut', {'fields': ('actif',)}),
-    )
 
 
 @admin.register(Stagiaire)
@@ -58,11 +46,11 @@ class StagiaireAdmin(admin.ModelAdmin):
 
 @admin.register(Formation)
 class FormationAdmin(admin.ModelAdmin):
-    list_display = ['stagiaire', 'habilitation', 'statut', 'date_debut', 'date_fin_reelle']
-    list_filter = ['statut', 'habilitation', 'date_debut']
-    search_fields = ['stagiaire__nom', 'stagiaire__prenom', 'habilitation__code']
+    list_display = ['stagiaire', 'statut', 'date_debut', 'date_fin_reelle']
+    list_filter = ['statut', 'date_debut']
+    search_fields = ['stagiaire__nom', 'stagiaire__prenom']
     fieldsets = (
-        ('Stagiaire et Habilitation', {'fields': ('stagiaire', 'habilitation')}),
+        ('Stagiaire', {'fields': ('stagiaire',)}),
         ('Informations de formation', {'fields': ('organisme_formation', 'numero_session')}),
         ('Dates', {'fields': ('date_debut', 'date_fin_prevue', 'date_fin_reelle')}),
         ('Statut', {'fields': ('statut', 'notes')}),
@@ -71,24 +59,23 @@ class FormationAdmin(admin.ModelAdmin):
 
 @admin.register(ValidationCompetence)
 class ValidationCompetenceAdmin(admin.ModelAdmin):
-    list_display = ['formation', 'type_competence', 'titre_competence', 'valide', 'validateur']
-    list_filter = ['type_competence', 'valide', 'date_validation']
-    search_fields = ['formation__stagiaire__nom', 'titre_competence']
+    list_display = ['formation', 'valide', 'validateur']
+    list_filter = ['valide', 'date_validation']
+    search_fields = ['formation__stagiaire__nom']
     fieldsets = (
         ('Formation', {'fields': ('formation',)}),
-        ('Compétence', {'fields': ('type_competence', 'titre_competence', 'description')}),
+        ('Compétence', {'fields': ('description',)}),
         ('Validation', {'fields': ('valide', 'validateur', 'date_validation', 'commentaires_validateur')}),
     )
 
 
 @admin.register(Titre)
 class TitreAdmin(admin.ModelAdmin):
-    list_display = ['numero_titre', 'stagiaire', 'habilitation', 'statut', 'date_delivrance', 'date_expiration']
-    list_filter = ['statut', 'habilitation', 'date_delivrance']
+    list_display = ['numero_titre', 'stagiaire', 'statut', 'date_delivrance', 'date_expiration']
+    list_filter = ['statut', 'date_delivrance']
     search_fields = ['numero_titre', 'stagiaire__nom', 'stagiaire__prenom']
     fieldsets = (
         ('Identification', {'fields': ('numero_titre', 'stagiaire', 'formation')}),
-        ('Habilitation', {'fields': ('habilitation',)}),
         ('Dates', {'fields': ('date_delivrance', 'date_expiration')}),
         ('Statut', {'fields': ('statut', 'notes_avis', 'delivre_par')}),
     )
@@ -129,11 +116,11 @@ class JournalAdmin(admin.ModelAdmin):
 
 @admin.register(SessionFormation)
 class SessionFormationAdmin(admin.ModelAdmin):
-    list_display = ['numero_session', 'habilitation', 'date_debut', 'date_fin', 'statut', 'nombre_places', 'places_restantes']
-    list_filter = ['statut', 'habilitation', 'date_debut']
-    search_fields = ['numero_session', 'habilitation__code', 'lieu']
+    list_display = ['numero_session', 'date_debut', 'date_fin', 'statut', 'nombre_places', 'places_restantes']
+    list_filter = ['statut', 'date_debut']
+    search_fields = ['numero_session', 'lieu']
     fieldsets = (
-        ('Identification', {'fields': ('numero_session', 'habilitation')}),
+        ('Identification', {'fields': ('numero_session',)}),
         ('Dates et lieu', {'fields': ('date_debut', 'date_fin', 'lieu')}),
         ('Organisation', {'fields': ('organisme_formation', 'formateur_nom', 'nombre_places')}),
         ('Statut', {'fields': ('statut', 'notes', 'createur')}),
@@ -198,14 +185,13 @@ class ProfilUtilisateurAdmin(admin.ModelAdmin):
 
 @admin.register(DemandeFormation)
 class DemandeFormationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'entreprise_demandeuse', 'organisme_formation', 'habilitation', 
-                    'nombre_stagiaires', 'statut', 'date_demande', 'date_traitement']
-    list_filter = ['statut', 'organisme_formation', 'habilitation', 'date_demande']
-    search_fields = ['entreprise_demandeuse__nom', 'organisme_formation__nom', 'habilitation__code']
+    list_display = ['id', 'entreprise_demandeuse', 'organisme_formation', 'nombre_stagiaires', 'statut', 'date_demande', 'date_traitement']
+    list_filter = ['statut', 'organisme_formation', 'date_demande']
+    search_fields = ['entreprise_demandeuse__nom', 'organisme_formation__nom']
     filter_horizontal = ['stagiaires']
     fieldsets = (
         ('Demande', {
-            'fields': ('entreprise_demandeuse', 'organisme_formation', 'habilitation'),
+            'fields': ('entreprise_demandeuse', 'organisme_formation'),
         }),
         ('Stagiaires concernés', {
             'fields': ('stagiaires',),
